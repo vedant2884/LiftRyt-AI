@@ -9,5 +9,12 @@ export default defineConfig({
     host: true, // listen on 0.0.0.0 so the Vite dev server is reachable from inside the Docker container
     port: 5173,
     strictPort: true,
+    watch: {
+      // Docker Desktop's bind mounts on Windows/macOS don't reliably forward
+      // inotify events into the container, so native file-watching silently
+      // misses edits. Polling trades a little CPU for HMR you can trust.
+      usePolling: true,
+      interval: 300,
+    },
   },
 })

@@ -57,6 +57,13 @@ end.
 
 Backend interactive API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
+Note: `frontend/vite.config.ts` enables polling-based file watching
+(`server.watch.usePolling`). Docker Desktop's bind mounts on Windows/macOS
+don't reliably forward native filesystem events into the container, so
+without polling, edits can silently fail to trigger HMR — you'd be looking
+at stale content and not know it. Costs a bit of CPU; worth it for
+hot-reload you can actually trust.
+
 ### Database migrations (Alembic)
 
 The schema lives in `backend/app/models/` (SQLAlchemy 2.0) and is versioned

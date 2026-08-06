@@ -6,6 +6,7 @@ mapped class once its module has been imported somewhere.
 from app.models.chat_message import ChatMessage
 from app.models.exercise import Exercise
 from app.models.macro_target import MacroTarget
+from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.models.weight_log import WeightLog
 from app.models.workout import Workout
@@ -15,6 +16,7 @@ __all__ = [
     "ChatMessage",
     "Exercise",
     "MacroTarget",
+    "RefreshToken",
     "User",
     "WeightLog",
     "Workout",

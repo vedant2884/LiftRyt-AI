@@ -1,49 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { api } from "./lib/api";
-
-type HealthStatus = "checking" | "ok" | "error";
+import { useAuthStore } from "./store/authStore";
+import type { AuthResponse } from "./types/auth";
+import HomePage from "./pages/HomePage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import DashboardPage from "./pages/DashboardPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  const [status, setStatus] = useState<HealthStatus>("checking");
-  const [detail, setDetail] = useState<string>("");
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const finishBootstrap = useAuthStore((s) => s.finishBootstrap);
 
   useEffect(() => {
+    // Silent refresh on load: the in-memory access token doesn't survive a
+    // page reload, but the httpOnly refresh cookie does, so this recovers
+    // the session without the user re-entering credentials.
     api
-      .get("/health")
-      .then((res) => {
-        setStatus("ok");
-        setDetail(JSON.stringify(res.data));
+      .post<AuthResponse>("/auth/refresh")
+      .then((res) => setAuth(res.data.access_token, res.data.user))
+      .catch(() => {
+        // No valid refresh cookie (never logged in, or it expired/was
+        // revoked) — this is a normal, expected outcome, not an error.
       })
-      .catch((err) => {
-        setStatus("error");
-        setDetail(err.message);
-      });
-  }, []);
-
-  const statusColor =
-    status === "ok"
-      ? "bg-emerald-500"
-      : status === "error"
-        ? "bg-red-500"
-        : "bg-amber-400";
+      .finally(finishBootstrap);
+  }, [setAuth, finishBootstrap]);
 
   return (
-    <main className="flex min-h-svh flex-col items-center justify-center gap-4 bg-neutral-950 px-6 text-neutral-100">
-      <h1 className="text-4xl font-semibold tracking-tight">
-        Lift<span className="text-violet-400">Ryt</span> AI
-      </h1>
-      <p className="text-neutral-400">Monorepo skeleton is booted.</p>
-
-      <div className="mt-4 flex items-center gap-2 rounded-full border border-neutral-800 bg-neutral-900 px-4 py-2 text-sm">
-        <span className={`h-2.5 w-2.5 rounded-full ${statusColor}`} />
-        <span>
-          backend health check:{" "}
-          <span className="font-mono text-neutral-300">
-            {status === "checking" ? "checking..." : detail}
-          </span>
-        </span>
-      </div>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
