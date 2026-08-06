@@ -8,6 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import ExercisesPage from "./pages/ExercisesPage";
+import WeightPage from "./pages/WeightPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 
@@ -38,6 +39,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/weight" element={<WeightPage />} />
             <Route path="/exercises" element={<ExercisesPage />} />
           </Route>
         </Route>
