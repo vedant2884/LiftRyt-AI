@@ -1,5 +1,6 @@
 import { useAuthStore } from "../store/authStore";
 import WeightTrendCard from "../components/WeightTrendCard";
+import WorkoutsSummaryCard from "../components/WorkoutsSummaryCard";
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
@@ -12,7 +13,10 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <h1 className="text-2xl font-semibold">Welcome, {user.full_name}</h1>
 
-        <WeightTrendCard />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <WeightTrendCard />
+          <WorkoutsSummaryCard />
+        </div>
 
         <dl className="grid grid-cols-2 gap-4 rounded-xl border border-neutral-800 bg-neutral-900 p-6 text-sm sm:grid-cols-3">
           <div>
@@ -41,9 +45,7 @@ export default function DashboardPage() {
           </div>
         </dl>
 
-        <p className="text-sm text-neutral-500">
-          Workout logging and the AI coach land in upcoming steps.
-        </p>
+        <p className="text-sm text-neutral-500">The AI coach lands in an upcoming step.</p>
       </div>
     </main>
   );

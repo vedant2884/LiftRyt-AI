@@ -33,6 +33,9 @@ export default function AppLayout() {
               <NavLink to="/weight" className={navLinkClass}>
                 Weight
               </NavLink>
+              <NavLink to="/workouts" className={navLinkClass}>
+                Workouts
+              </NavLink>
               <NavLink to="/exercises" className={navLinkClass}>
                 Exercises
               </NavLink>
