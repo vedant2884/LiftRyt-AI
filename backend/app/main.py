@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routers import auth, exercises, macros, splits, weight, workouts
+from app.api.routers import auth, chat, exercises, macros, splits, weight, workouts
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -20,6 +20,7 @@ app.include_router(weight.router)
 app.include_router(workouts.router)
 app.include_router(macros.router)
 app.include_router(splits.router)
+app.include_router(chat.router)
 
 
 @app.get("/health")

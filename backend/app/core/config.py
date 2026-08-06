@@ -2,12 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Central app configuration, populated from environment variables / .env.
-
-    Extended in later steps (LLM_PROVIDER in step 10, etc.) rather than
-    front-loaded here, so this file stays a truthful record of what the app
-    actually uses at each stage.
-    """
+    """Central app configuration, populated from environment variables / .env."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -34,6 +29,18 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
+
+    # Provider-agnostic LLM layer: Groq (free tier, fast, primary) and Ollama
+    # (local, no account needed, dev-mode fallback) both expose an
+    # OpenAI-compatible chat completions API, so switching providers is this
+    # one setting, not a rewritten client — see app/services/llm/provider.py.
+    llm_provider: str = "groq"  # "groq" | "ollama"
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+    # host.docker.internal resolves to the host machine from inside the
+    # backend container — the right default for a natively-installed Ollama.
+    ollama_base_url: str = "http://host.docker.internal:11434"
+    ollama_model: str = "llama3.2"
 
     @property
     def cors_origins_list(self) -> list[str]:

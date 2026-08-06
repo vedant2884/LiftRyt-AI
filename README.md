@@ -107,6 +107,53 @@ name or description literally contains those words, but relevant results
 (Back Squat, Good Morning, Romanian Deadlift) still surface, unlike the
 keyword search next to it.
 
+### AI coach (Groq / Ollama)
+
+The coach is a small agent loop (`backend/app/services/agent.py`): user
+message → retrieve context (weight trend, PRs, training volume, active
+macro target, and semantically relevant exercises via the RAG pipeline
+above) → let the model decide whether to call a tool → run the tool for
+real against the actual database → final natural-language response. The
+model never generates a workout split or estimates macro numbers itself —
+`generate_workout_split` and `calculate_macros` (steps 7-8) are exposed as
+tools it calls, so its answers are grounded in the same deterministic logic
+those features already use.
+
+**Provider abstraction:** Groq and Ollama both expose an OpenAI-compatible
+chat-completions API (including tool calling), so
+`backend/app/services/llm/provider.py` returns the same client pointed at a
+different `base_url`/model — set in `backend/.env`:
+
+```bash
+# Groq (default) — free tier, fast, needs a key from console.groq.com
+LLM_PROVIDER=groq
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.3-70b-versatile
+
+# Ollama — fully local, no account. Either install it natively (the default
+# OLLAMA_BASE_URL=http://host.docker.internal:11434 already points at that),
+# or run it in Docker:
+#   docker compose --profile ollama up -d ollama
+#   docker compose exec ollama ollama pull llama3.2
+# ...then in backend/.env:
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://ollama:11434   # only when using the dockerized profile
+OLLAMA_MODEL=llama3.2
+```
+
+After changing `backend/.env`, the backend container needs to be
+**recreated**, not just restarted — `env_file` values are read at container
+creation, so `docker compose restart backend` won't pick up the change;
+use `docker compose up -d backend` (Compose recreates it automatically
+when it detects the change) or `--force-recreate` if it doesn't.
+
+Try it: log in, open **Coach**, and ask for a workout split or your
+macros — the response explains *why* each exercise or number was chosen,
+using the same `reason` strings the split generator (step 8) computes.
+The **Weekly check-in** button generates an on-demand recap (weight trend +
+training volume + one specific suggestion) from real logged data in a
+single LLM call.
+
 ### Running services individually (without Docker)
 
 Backend:

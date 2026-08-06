@@ -21,7 +21,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-svh bg-neutral-950 text-neutral-100">
       <header className="border-b border-neutral-800">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
             <span className="font-semibold tracking-tight">
               Lift<span className="text-violet-400">Ryt</span> AI
@@ -29,6 +29,9 @@ export default function AppLayout() {
             <nav className="flex items-center gap-1">
               <NavLink to="/dashboard" className={navLinkClass} end>
                 Dashboard
+              </NavLink>
+              <NavLink to="/coach" className={navLinkClass}>
+                Coach
               </NavLink>
               <NavLink to="/weight" className={navLinkClass}>
                 Weight
