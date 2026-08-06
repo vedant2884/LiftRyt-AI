@@ -1,0 +1,8 @@
+# Step 1: core API skeleton only. Each later step appends what it needs
+# (SQLAlchemy/Alembic in step 2, auth in step 3, Groq/pgvector/sentence-transformers
+# in steps 9-10) so Docker rebuilds stay fast and every dependency's purpose is traceable
+# to the step that introduced it.
+fastapi==0.118.0
+uvicorn[standard]==0.37.0
+pydantic==2.11.7
+pydantic-settings==2.7.1
