@@ -1,3 +1,4 @@
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import Index, String, Text
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -5,6 +6,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedAtMixin, UUIDPkMixin
 from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType
+
+EMBEDDING_DIM = 384  # all-MiniLM-L6-v2's output dimension
 
 
 class Exercise(Base, UUIDPkMixin, CreatedAtMixin):
@@ -35,3 +38,8 @@ class Exercise(Base, UUIDPkMixin, CreatedAtMixin):
     difficulty: Mapped[ExperienceLevel] = mapped_column(
         SQLEnum(ExperienceLevel, name="exercise_difficulty_enum"), nullable=False
     )
+
+    # Deferred from step 2's initial schema until there was an actual RAG
+    # pipeline to populate and query it — nullable because it's backfilled
+    # after insert (see app/db/embed_exercises.py), not set at creation time.
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)

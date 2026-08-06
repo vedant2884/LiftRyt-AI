@@ -4,6 +4,7 @@ mapped class once its module has been imported somewhere.
 """
 
 from app.models.chat_message import ChatMessage
+from app.models.chat_summary import ChatSummary
 from app.models.exercise import Exercise
 from app.models.macro_target import MacroTarget
 from app.models.refresh_token import RefreshToken
@@ -14,6 +15,7 @@ from app.models.workout_set import WorkoutSet
 
 __all__ = [
     "ChatMessage",
+    "ChatSummary",
     "Exercise",
     "MacroTarget",
     "RefreshToken",

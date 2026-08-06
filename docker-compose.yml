@@ -38,6 +38,10 @@ services:
       - "${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend:/app
+      # Named volume for the sentence-transformers model download (~90MB) —
+      # without this it re-downloads from HuggingFace on every container
+      # recreation instead of just on first-ever startup.
+      - hf_cache:/root/.cache/huggingface
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,3 +62,4 @@ services:
 
 volumes:
   pg_data:
+  hf_cache:

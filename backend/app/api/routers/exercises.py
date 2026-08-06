@@ -10,6 +10,7 @@ from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType
 from app.models.exercise import Exercise
 from app.models.user import User
 from app.schemas.exercise import ExerciseListResponse, ExerciseOut
+from app.services import exercise_retrieval
 
 router = APIRouter(prefix="/exercises", tags=["exercises"])
 
@@ -81,6 +82,22 @@ async def list_equipment(
 ) -> list[str]:
     result = await db.execute(select(Exercise.equipment).distinct().order_by(Exercise.equipment))
     return [row[0] for row in result.all()]
+
+
+@router.get("/search/semantic", response_model=list[ExerciseOut])
+async def semantic_search(
+    q: str = Query(..., min_length=1, description="Natural-language description of what you need"),
+    limit: int = Query(default=10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> list[ExerciseOut]:
+    """RAG counterpart to the keyword search above: finds exercises by
+    meaning, e.g. "something for a sore lower back" or "explosive movement
+    for athletes" — queries that won't reliably hit via ILIKE name/description
+    matching but do via embedding similarity.
+    """
+    results = await exercise_retrieval.semantic_search_exercises(db, q, limit)
+    return [ExerciseOut.model_validate(exercise) for exercise in results]
 
 
 @router.get("/{exercise_id}", response_model=ExerciseOut)

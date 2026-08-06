@@ -88,6 +88,25 @@ columns, add the corresponding `DROP TYPE IF EXISTS ...` statements to its
 `downgrade()` by hand — see `1ede5e6ec696_init_schema.py` for the pattern.
 Otherwise a downgrade-then-upgrade cycle fails with "type already exists".
 
+### RAG pipeline (embeddings + pgvector)
+
+The exercise library is embedded locally via `sentence-transformers`
+(`all-MiniLM-L6-v2`, 384 dimensions, no paid API) and stored in a pgvector
+`vector(384)` column with an HNSW index. `entrypoint.sh` runs the backfill
+(`app/db/embed_exercises.py`) after seeding, so a fresh DB ends up fully
+embedded with no manual step — but expect the **first-ever** `docker compose
+up` to take noticeably longer than later ones: it's downloading the model
+weights (~90MB) in addition to installing `torch`/`sentence-transformers`
+into the image. The model is cached in the `hf_cache` named volume, so
+`docker compose up`/`restart` after that first run doesn't re-download it —
+only `docker compose down -v` (which removes volumes) would.
+
+Try it: log in, go to Exercises, switch to "Semantic" search, and search
+something like *"something gentle for a sore lower back"* — no exercise
+name or description literally contains those words, but relevant results
+(Back Squat, Good Morning, Romanian Deadlift) still surface, unlike the
+keyword search next to it.
+
 ### Running services individually (without Docker)
 
 Backend:

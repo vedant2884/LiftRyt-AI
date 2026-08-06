@@ -17,3 +17,11 @@ bcrypt==4.2.1
 pyjwt==2.10.1
 email-validator==2.2.0
 redis==5.2.1
+
+# Step 9: RAG (local embeddings + pgvector)
+# CPU-only torch build — the default index pulls a multi-GB CUDA wheel that's
+# wasted weight in a container with no GPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1
+sentence-transformers==3.3.1
+pgvector==0.3.6

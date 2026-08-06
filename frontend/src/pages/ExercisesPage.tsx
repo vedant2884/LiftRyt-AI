@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { fetchEquipmentOptions, fetchExercises, fetchMuscleOptions } from "../api/exercises";
+import {
+  fetchEquipmentOptions,
+  fetchExercises,
+  fetchExercisesSemantic,
+  fetchMuscleOptions,
+} from "../api/exercises";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import type { Exercise } from "../types/exercise";
 
@@ -9,8 +14,10 @@ const CATEGORY_OPTIONS = ["push", "pull", "legs", "upper", "lower", "full_body",
 const MOVEMENT_TYPE_OPTIONS = ["compound", "isolation"];
 const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced"];
 
+type SearchMode = "keyword" | "semantic";
+
 const selectClass =
-  "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400";
+  "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400 disabled:opacity-40";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-emerald-500/15 text-emerald-400",
@@ -21,6 +28,7 @@ const difficultyColor: Record<string, string> = {
 const humanize = (s: string) => s.replace(/_/g, " ");
 
 export default function ExercisesPage() {
+  const [mode, setMode] = useState<SearchMode>("keyword");
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
   const [muscle, setMuscle] = useState("");
@@ -42,8 +50,31 @@ export default function ExercisesPage() {
     fetchEquipmentOptions().then(setEquipmentOptions);
   }, []);
 
-  // Any filter change starts a fresh search (offset 0, replace results).
+  // Semantic mode: only the query matters (the endpoint doesn't take
+  // filters), and there's no pagination — it's a fixed top-N similarity list.
   useEffect(() => {
+    if (mode !== "semantic") return;
+    if (!debouncedQ.trim()) {
+      setItems([]);
+      setTotal(0);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    fetchExercisesSemantic(debouncedQ, PAGE_SIZE).then((results) => {
+      if (cancelled) return;
+      setItems(results);
+      setTotal(results.length);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, debouncedQ]);
+
+  // Keyword mode: any filter change starts a fresh search (offset 0).
+  useEffect(() => {
+    if (mode !== "keyword") return;
     let cancelled = false;
     setLoading(true);
     fetchExercises({
@@ -64,7 +95,7 @@ export default function ExercisesPage() {
     return () => {
       cancelled = true;
     };
-  }, [debouncedQ, muscle, equipment, category, movementType, difficulty]);
+  }, [mode, debouncedQ, muscle, equipment, category, movementType, difficulty]);
 
   async function loadMore() {
     setLoading(true);
@@ -84,17 +115,48 @@ export default function ExercisesPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <h1 className="mb-6 text-2xl font-semibold">Exercise Library</h1>
+      <h1 className="mb-1 text-2xl font-semibold">Exercise Library</h1>
+      <p className="mb-6 text-sm text-neutral-500">
+        {mode === "keyword"
+          ? "Keyword search — matches text in the name or description."
+          : "Semantic search — finds exercises by meaning (pgvector + sentence embeddings), even when your words don't literally appear anywhere."}
+      </p>
+
+      <div className="mb-4 inline-flex rounded-lg border border-neutral-800 bg-neutral-900 p-1">
+        <button
+          onClick={() => setMode("keyword")}
+          className={`rounded-md px-3 py-1.5 text-sm transition ${
+            mode === "keyword" ? "bg-violet-500 text-white" : "text-neutral-400 hover:text-white"
+          }`}
+        >
+          Keyword
+        </button>
+        <button
+          onClick={() => setMode("semantic")}
+          className={`rounded-md px-3 py-1.5 text-sm transition ${
+            mode === "semantic" ? "bg-violet-500 text-white" : "text-neutral-400 hover:text-white"
+          }`}
+        >
+          Semantic
+        </button>
+      </div>
 
       <div className="mb-6 flex flex-wrap gap-3">
         <input
           type="search"
-          placeholder="Search exercises..."
+          placeholder={
+            mode === "keyword" ? "Search exercises..." : "Describe what you need, e.g. \"sore lower back\"..."
+          }
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="min-w-[200px] flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400"
+          className="min-w-[240px] flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400"
         />
-        <select value={muscle} onChange={(e) => setMuscle(e.target.value)} className={selectClass}>
+        <select
+          value={muscle}
+          onChange={(e) => setMuscle(e.target.value)}
+          disabled={mode === "semantic"}
+          className={selectClass}
+        >
           <option value="">All muscles</option>
           {muscleOptions.map((m) => (
             <option key={m} value={m}>
@@ -105,6 +167,7 @@ export default function ExercisesPage() {
         <select
           value={equipment}
           onChange={(e) => setEquipment(e.target.value)}
+          disabled={mode === "semantic"}
           className={selectClass}
         >
           <option value="">All equipment</option>
@@ -117,6 +180,7 @@ export default function ExercisesPage() {
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
+          disabled={mode === "semantic"}
           className={selectClass}
         >
           <option value="">All categories</option>
@@ -129,6 +193,7 @@ export default function ExercisesPage() {
         <select
           value={movementType}
           onChange={(e) => setMovementType(e.target.value)}
+          disabled={mode === "semantic"}
           className={selectClass}
         >
           <option value="">Compound + isolation</option>
@@ -141,6 +206,7 @@ export default function ExercisesPage() {
         <select
           value={difficulty}
           onChange={(e) => setDifficulty(e.target.value)}
+          disabled={mode === "semantic"}
           className={selectClass}
         >
           <option value="">All levels</option>
@@ -153,7 +219,9 @@ export default function ExercisesPage() {
       </div>
 
       <p className="mb-4 text-sm text-neutral-500">
-        {total} exercise{total === 1 ? "" : "s"}
+        {mode === "semantic" && !debouncedQ.trim()
+          ? "Type a description above to search"
+          : `${total} exercise${total === 1 ? "" : "s"}`}
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -202,7 +270,7 @@ export default function ExercisesPage() {
 
       {loading && <p className="mt-6 text-center text-sm text-neutral-500">Loading...</p>}
 
-      {!loading && items.length < total && (
+      {!loading && mode === "keyword" && items.length < total && (
         <div className="mt-6 flex justify-center">
           <button
             onClick={loadMore}
