@@ -6,3 +6,8 @@ fastapi==0.118.0
 uvicorn[standard]==0.37.0
 pydantic==2.11.7
 pydantic-settings==2.7.1
+
+# Step 2: database layer
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0

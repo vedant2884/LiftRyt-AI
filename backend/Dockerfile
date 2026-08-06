@@ -15,4 +15,10 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Runs pending Alembic migrations before starting the dev server, so
+# `docker compose up` alone is enough to get a fully migrated DB — no
+# separate manual migration step for local dev.
+# Invoked as `sh entrypoint.sh` (not './entrypoint.sh') because the file is
+# bind-mounted from the host at runtime, where its executable bit isn't
+# reliably preserved (e.g. Windows hosts).
+CMD ["sh", "entrypoint.sh"]

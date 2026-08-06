@@ -57,6 +57,30 @@ end.
 
 Backend interactive API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
+### Database migrations (Alembic)
+
+The schema lives in `backend/app/models/` (SQLAlchemy 2.0) and is versioned
+with Alembic migrations in `backend/alembic/versions/`. The backend's
+`entrypoint.sh` runs `alembic upgrade head` before starting the dev server,
+so `docker compose up` alone brings up a fully migrated DB — no manual
+migration step for local dev. Run Alembic commands inside the running
+backend container so they use the same DB connection as the app:
+
+```bash
+# after changing a model, generate a new migration and review it before applying
+docker compose exec backend alembic revision --autogenerate -m "describe the change"
+docker compose exec backend alembic upgrade head
+
+# roll back one migration
+docker compose exec backend alembic downgrade -1
+```
+
+Note: Alembic's autogenerate does **not** emit `DROP TYPE` for Postgres enums
+on downgrade (it only diffs tables/columns). When a migration adds enum
+columns, add the corresponding `DROP TYPE IF EXISTS ...` statements to its
+`downgrade()` by hand — see `1ede5e6ec696_init_schema.py` for the pattern.
+Otherwise a downgrade-then-upgrade cycle fails with "type already exists".
+
 ### Running services individually (without Docker)
 
 Backend:
