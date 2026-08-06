@@ -12,6 +12,7 @@ import WeightPage from "./pages/WeightPage";
 import WorkoutsPage from "./pages/WorkoutsPage";
 import WorkoutDetailPage from "./pages/WorkoutDetailPage";
 import MacroCalculatorPage from "./pages/MacroCalculatorPage";
+import SplitGeneratorPage from "./pages/SplitGeneratorPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 
@@ -47,6 +48,7 @@ function App() {
             <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
             <Route path="/exercises" element={<ExercisesPage />} />
             <Route path="/macros" element={<MacroCalculatorPage />} />
+            <Route path="/splits" element={<SplitGeneratorPage />} />
           </Route>
         </Route>
       </Routes>

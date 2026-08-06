@@ -42,6 +42,9 @@ export default function AppLayout() {
               <NavLink to="/macros" className={navLinkClass}>
                 Macros
               </NavLink>
+              <NavLink to="/splits" className={navLinkClass}>
+                Splits
+              </NavLink>
             </nav>
           </div>
           <div className="flex items-center gap-3">
