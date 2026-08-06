@@ -11,6 +11,7 @@ import ExercisesPage from "./pages/ExercisesPage";
 import WeightPage from "./pages/WeightPage";
 import WorkoutsPage from "./pages/WorkoutsPage";
 import WorkoutDetailPage from "./pages/WorkoutDetailPage";
+import MacroCalculatorPage from "./pages/MacroCalculatorPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 
@@ -45,6 +46,7 @@ function App() {
             <Route path="/workouts" element={<WorkoutsPage />} />
             <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
             <Route path="/exercises" element={<ExercisesPage />} />
+            <Route path="/macros" element={<MacroCalculatorPage />} />
           </Route>
         </Route>
       </Routes>
