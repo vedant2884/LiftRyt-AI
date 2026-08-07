@@ -29,3 +29,8 @@ pgvector==0.3.6
 # Step 10: AI coach — Groq and Ollama both speak the OpenAI-compatible
 # chat-completions/tool-calling API, so one client library covers both.
 openai==1.59.6
+
+# Step 12: tests
+pytest==8.3.4
+pytest-asyncio==0.25.0
+httpx==0.28.1
