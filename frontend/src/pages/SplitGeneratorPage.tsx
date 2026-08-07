@@ -11,7 +11,7 @@ const GOALS: { value: TrainingGoal; label: string }[] = [
 ];
 
 const selectClass =
-  "rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400";
+  "rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent";
 
 const categoryColor: Record<string, string> = {
   push: "bg-blue-500/15 text-blue-400",
@@ -42,14 +42,14 @@ export default function SplitGeneratorPage() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="mb-2 text-2xl font-semibold">Workout Split Generator</h1>
-      <p className="mb-6 text-sm text-neutral-500">
+      <p className="mb-6 text-sm text-ink-muted">
         Rule-based, not AI-guessed — every exercise below is picked deterministically from your
         exercise library, with the reasoning shown.
       </p>
 
-      <div className="mb-8 flex flex-wrap items-end gap-4 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <div className="mb-8 flex flex-wrap items-end gap-4 rounded-xl border border-line bg-surface p-4">
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="days">
+          <label className="text-xs text-ink-muted" htmlFor="days">
             Days per week
           </label>
           <select
@@ -66,7 +66,7 @@ export default function SplitGeneratorPage() {
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="experience">
+          <label className="text-xs text-ink-muted" htmlFor="experience">
             Experience level
           </label>
           <select
@@ -81,7 +81,7 @@ export default function SplitGeneratorPage() {
           </select>
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="goal">
+          <label className="text-xs text-ink-muted" htmlFor="goal">
             Goal
           </label>
           <select
@@ -100,7 +100,7 @@ export default function SplitGeneratorPage() {
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="rounded-md bg-violet-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Generating..." : "Generate split"}
         </button>
@@ -108,36 +108,36 @@ export default function SplitGeneratorPage() {
 
       {plan && (
         <div>
-          <p className="mb-4 text-sm text-neutral-400">
-            <span className="font-medium text-neutral-200">{plan.split_type}</span> &middot;{" "}
+          <p className="mb-4 text-sm text-ink-secondary">
+            <span className="font-medium text-ink">{plan.split_type}</span> &middot;{" "}
             {plan.days_per_week} days/week &middot; {plan.goal.replace("_", " ")}
           </p>
           <div className="space-y-4">
             {plan.days.map((day) => (
               <div
                 key={day.day_number}
-                className="rounded-xl border border-neutral-800 bg-neutral-900 p-4"
+                className="rounded-xl border border-line bg-surface p-4"
               >
                 <h2 className="mb-3 font-medium">
                   Day {day.day_number}: {day.label}
                 </h2>
                 <ul className="space-y-3">
                   {day.exercises.map((ex) => (
-                    <li key={ex.exercise_id} className="border-b border-neutral-800 pb-3 last:border-0 last:pb-0">
+                    <li key={ex.exercise_id} className="border-b border-line pb-3 last:border-0 last:pb-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium">{ex.name}</span>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-xs ${categoryColor[ex.category] ?? "bg-neutral-800 text-neutral-400"}`}
+                            className={`rounded-full px-2 py-0.5 text-xs ${categoryColor[ex.category] ?? "bg-surface-hover text-ink-secondary"}`}
                           >
                             {ex.category}
                           </span>
-                          <span className="text-sm text-neutral-400">
+                          <span className="text-sm text-ink-secondary">
                             {ex.sets} &times; {ex.reps}
                           </span>
                         </div>
                       </div>
-                      <p className="mt-1 text-xs text-neutral-500">{ex.reason}</p>
+                      <p className="mt-1 text-xs text-ink-muted">{ex.reason}</p>
                     </li>
                   ))}
                 </ul>

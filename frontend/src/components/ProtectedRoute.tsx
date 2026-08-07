@@ -7,7 +7,7 @@ export default function ProtectedRoute() {
 
   if (isBootstrapping) {
     return (
-      <main className="flex min-h-svh items-center justify-center bg-neutral-950 text-neutral-400">
+      <main className="flex min-h-svh items-center justify-center bg-bg text-ink-secondary">
         Loading...
       </main>
     );

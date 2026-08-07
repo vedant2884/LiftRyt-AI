@@ -1,9 +1,13 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.enums import ActivityLevel, DietaryPreference, ExperienceLevel, LengthUnit, Sex, WeightUnit
+
+ThemeMode = Literal["light", "dark"]
+AccentColor = Literal["violet", "emerald"]
 
 
 class UserProfile(BaseModel):
@@ -23,7 +27,8 @@ class UserProfile(BaseModel):
     dietary_preference: DietaryPreference
     unit_weight: WeightUnit
     unit_length: LengthUnit
-    theme: str
+    theme: ThemeMode
+    accent_color: AccentColor
     created_at: datetime
 
 
@@ -41,4 +46,5 @@ class UserProfileUpdate(BaseModel):
     dietary_preference: DietaryPreference | None = None
     unit_weight: WeightUnit | None = None
     unit_length: LengthUnit | None = None
-    theme: str | None = Field(default=None, max_length=30)
+    theme: ThemeMode | None = None
+    accent_color: AccentColor | None = None

@@ -17,7 +17,7 @@ const DIFFICULTY_OPTIONS = ["beginner", "intermediate", "advanced"];
 type SearchMode = "keyword" | "semantic";
 
 const selectClass =
-  "rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400 disabled:opacity-40";
+  "rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-40";
 
 const difficultyColor: Record<string, string> = {
   beginner: "bg-emerald-500/15 text-emerald-400",
@@ -116,17 +116,17 @@ export default function ExercisesPage() {
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <h1 className="mb-1 text-2xl font-semibold">Exercise Library</h1>
-      <p className="mb-6 text-sm text-neutral-500">
+      <p className="mb-6 text-sm text-ink-muted">
         {mode === "keyword"
           ? "Keyword search — matches text in the name or description."
           : "Semantic search — finds exercises by meaning (pgvector + sentence embeddings), even when your words don't literally appear anywhere."}
       </p>
 
-      <div className="mb-4 inline-flex rounded-lg border border-neutral-800 bg-neutral-900 p-1">
+      <div className="mb-4 inline-flex rounded-lg border border-line bg-surface p-1">
         <button
           onClick={() => setMode("keyword")}
           className={`rounded-md px-3 py-1.5 text-sm transition ${
-            mode === "keyword" ? "bg-violet-500 text-white" : "text-neutral-400 hover:text-white"
+            mode === "keyword" ? "bg-accent text-white" : "text-ink-secondary hover:text-ink"
           }`}
         >
           Keyword
@@ -134,7 +134,7 @@ export default function ExercisesPage() {
         <button
           onClick={() => setMode("semantic")}
           className={`rounded-md px-3 py-1.5 text-sm transition ${
-            mode === "semantic" ? "bg-violet-500 text-white" : "text-neutral-400 hover:text-white"
+            mode === "semantic" ? "bg-accent text-white" : "text-ink-secondary hover:text-ink"
           }`}
         >
           Semantic
@@ -149,7 +149,7 @@ export default function ExercisesPage() {
           }
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="min-w-[240px] flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-violet-400"
+          className="min-w-[240px] flex-1 rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
         />
         <select
           value={muscle}
@@ -218,7 +218,7 @@ export default function ExercisesPage() {
         </select>
       </div>
 
-      <p className="mb-4 text-sm text-neutral-500">
+      <p className="mb-4 text-sm text-ink-muted">
         {mode === "semantic" && !debouncedQ.trim()
           ? "Type a description above to search"
           : `${total} exercise${total === 1 ? "" : "s"}`}
@@ -233,8 +233,8 @@ export default function ExercisesPage() {
               onClick={() => setExpandedId(isExpanded ? null : ex.id)}
               className={`rounded-xl border p-4 text-left transition ${
                 isExpanded
-                  ? "col-span-full border-violet-400 bg-neutral-900"
-                  : "border-neutral-800 bg-neutral-900 hover:border-neutral-700"
+                  ? "col-span-full border-accent bg-surface"
+                  : "border-line bg-surface hover:border-line-strong"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
@@ -245,21 +245,21 @@ export default function ExercisesPage() {
                   {ex.difficulty}
                 </span>
               </div>
-              <p className="mt-1 text-xs capitalize text-neutral-500">
+              <p className="mt-1 text-xs capitalize text-ink-muted">
                 {ex.category.replace("_", " ")} &middot; {ex.equipment.replace("_", " ")} &middot;{" "}
                 {ex.movement_type}
               </p>
-              <p className="mt-2 text-xs text-neutral-400">
+              <p className="mt-2 text-xs text-ink-secondary">
                 {ex.primary_muscles.map(humanize).join(", ")}
                 {ex.secondary_muscles.length > 0 && (
-                  <span className="text-neutral-600">
+                  <span className="text-ink-muted">
                     {" "}
                     + {ex.secondary_muscles.map(humanize).join(", ")}
                   </span>
                 )}
               </p>
               {isExpanded && ex.description && (
-                <p className="mt-3 border-t border-neutral-800 pt-3 text-sm text-neutral-300">
+                <p className="mt-3 border-t border-line pt-3 text-sm text-ink">
                   {ex.description}
                 </p>
               )}
@@ -268,13 +268,13 @@ export default function ExercisesPage() {
         })}
       </div>
 
-      {loading && <p className="mt-6 text-center text-sm text-neutral-500">Loading...</p>}
+      {loading && <p className="mt-6 text-center text-sm text-ink-muted">Loading...</p>}
 
       {!loading && mode === "keyword" && items.length < total && (
         <div className="mt-6 flex justify-center">
           <button
             onClick={loadMore}
-            className="rounded-md border border-neutral-700 px-4 py-2 text-sm transition hover:bg-neutral-800"
+            className="rounded-md border border-line-strong px-4 py-2 text-sm transition hover:bg-surface-hover"
           >
             Load more
           </button>

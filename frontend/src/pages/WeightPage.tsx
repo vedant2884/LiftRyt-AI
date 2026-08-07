@@ -12,16 +12,8 @@ import {
   YAxis,
 } from "recharts";
 import { deleteWeightLog, fetchWeightAnalytics, fetchWeightLogs, logWeight } from "../api/weight";
-import {
-  axisLine,
-  chartSurface,
-  gridline,
-  seriesAqua,
-  seriesBlue,
-  seriesOrange,
-  textMuted,
-  textSecondary,
-} from "../lib/chartTheme";
+import { getChartTheme } from "../lib/chartTheme";
+import { useThemeStore } from "../store/themeStore";
 import type { WeightAnalytics, WeightLog } from "../types/weight";
 
 function formatDate(iso: string): string {
@@ -29,14 +21,16 @@ function formatDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-const tooltipStyle = {
-  background: chartSurface,
-  border: `1px solid ${axisLine}`,
-  borderRadius: 8,
-  fontSize: 12,
-};
-
 export default function WeightPage() {
+  const mode = useThemeStore((s) => s.theme);
+  const chart = getChartTheme(mode);
+  const tooltipStyle = {
+    background: chart.chartSurface,
+    border: `1px solid ${chart.axisLine}`,
+    borderRadius: 8,
+    fontSize: 12,
+  };
+
   const [analytics, setAnalytics] = useState<WeightAnalytics | null>(null);
   const [logs, setLogs] = useState<WeightLog[]>([]);
   const [weightInput, setWeightInput] = useState("");
@@ -91,10 +85,10 @@ export default function WeightPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-8 flex flex-wrap items-end gap-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4"
+        className="mb-8 flex flex-wrap items-end gap-3 rounded-xl border border-line bg-surface p-4"
       >
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="weight">
+          <label className="text-xs text-ink-muted" htmlFor="weight">
             Weight (kg)
           </label>
           <input
@@ -104,11 +98,11 @@ export default function WeightPage() {
             required
             value={weightInput}
             onChange={(e) => setWeightInput(e.target.value)}
-            className="w-28 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+            className="w-28 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="date">
+          <label className="text-xs text-ink-muted" htmlFor="date">
             Date
           </label>
           <input
@@ -116,24 +110,24 @@ export default function WeightPage() {
             type="date"
             value={dateInput}
             onChange={(e) => setDateInput(e.target.value)}
-            className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+            className="rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>
         <div className="min-w-[180px] flex-1 space-y-1">
-          <label className="text-xs text-neutral-500" htmlFor="note">
+          <label className="text-xs text-ink-muted" htmlFor="note">
             Note (optional)
           </label>
           <input
             id="note"
             value={noteInput}
             onChange={(e) => setNoteInput(e.target.value)}
-            className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+            className="w-full rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
           />
         </div>
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-violet-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {saving ? "Saving..." : "Log weight"}
         </button>
@@ -142,14 +136,14 @@ export default function WeightPage() {
 
       {analytics && (
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-            <p className="text-xs text-neutral-500">Current weight</p>
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <p className="text-xs text-ink-muted">Current weight</p>
             <p className="mt-1 text-2xl font-semibold">
               {analytics.current_weight_kg != null ? `${analytics.current_weight_kg} kg` : "—"}
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-            <p className="text-xs text-neutral-500">Rate of change</p>
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <p className="text-xs text-ink-muted">Rate of change</p>
             <p
               className={`mt-1 text-2xl font-semibold ${
                 rateDirection === "down"
@@ -162,51 +156,51 @@ export default function WeightPage() {
               {trend?.rate_kg_per_week != null ? `${trend.rate_kg_per_week} kg/wk` : "—"}
             </p>
           </div>
-          <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-            <p className="text-xs text-neutral-500">Projected goal date</p>
+          <div className="rounded-xl border border-line bg-surface p-4">
+            <p className="text-xs text-ink-muted">Projected goal date</p>
             <p className="mt-1 text-2xl font-semibold">
               {trend?.projected_goal_date ? formatDate(trend.projected_goal_date) : "—"}
             </p>
             {trend?.goal_weight_kg != null && (
-              <p className="mt-0.5 text-xs text-neutral-500">at {trend.goal_weight_kg} kg goal</p>
+              <p className="mt-0.5 text-xs text-ink-muted">at {trend.goal_weight_kg} kg goal</p>
             )}
           </div>
         </div>
       )}
 
       {analytics && analytics.series.length > 1 && (
-        <div className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <h2 className="mb-4 text-sm font-medium text-neutral-300">
+        <div className="mb-8 rounded-xl border border-line bg-surface p-4">
+          <h2 className="mb-4 text-sm font-medium text-ink-secondary">
             Weight over time — with 7-day and 30-day moving averages
           </h2>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={analytics.series} margin={{ left: 0 }}>
-              <CartesianGrid stroke={gridline} vertical={false} />
+              <CartesianGrid stroke={chart.gridline} vertical={false} />
               <XAxis
                 dataKey="logged_at"
                 tickFormatter={formatDate}
-                stroke={axisLine}
-                tick={{ fill: textMuted, fontSize: 11 }}
+                stroke={chart.axisLine}
+                tick={{ fill: chart.textMuted, fontSize: 11 }}
                 minTickGap={30}
               />
               <YAxis
                 domain={["dataMin - 1", "dataMax + 1"]}
-                stroke={axisLine}
-                tick={{ fill: textMuted, fontSize: 11 }}
+                stroke={chart.axisLine}
+                tick={{ fill: chart.textMuted, fontSize: 11 }}
                 width={44}
               />
               <Tooltip
                 labelFormatter={(v) => formatDate(String(v))}
                 contentStyle={tooltipStyle}
-                labelStyle={{ color: textSecondary }}
-                cursor={{ stroke: axisLine }}
+                labelStyle={{ color: chart.textSecondary }}
+                cursor={{ stroke: chart.axisLine }}
               />
-              <Legend wrapperStyle={{ fontSize: 12, color: textSecondary }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: chart.textSecondary }} />
               <Line
                 type="monotone"
                 dataKey="weight_kg"
                 name="Weight"
-                stroke={seriesBlue}
+                stroke={chart.seriesBlue}
                 strokeWidth={2}
                 dot={false}
                 strokeOpacity={0.5}
@@ -215,7 +209,7 @@ export default function WeightPage() {
                 type="monotone"
                 dataKey="moving_avg_7d"
                 name="7-day avg"
-                stroke={seriesOrange}
+                stroke={chart.seriesOrange}
                 strokeWidth={2}
                 dot={false}
               />
@@ -223,7 +217,7 @@ export default function WeightPage() {
                 type="monotone"
                 dataKey="moving_avg_30d"
                 name="30-day avg"
-                stroke={seriesAqua}
+                stroke={chart.seriesAqua}
                 strokeWidth={2}
                 dot={false}
               />
@@ -233,49 +227,54 @@ export default function WeightPage() {
       )}
 
       {analytics && analytics.weekly_averages.length > 0 && (
-        <div className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <h2 className="mb-4 text-sm font-medium text-neutral-300">Weekly average weight</h2>
+        <div className="mb-8 rounded-xl border border-line bg-surface p-4">
+          <h2 className="mb-4 text-sm font-medium text-ink-secondary">Weekly average weight</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={analytics.weekly_averages} margin={{ left: 0 }}>
-              <CartesianGrid stroke={gridline} vertical={false} />
+              <CartesianGrid stroke={chart.gridline} vertical={false} />
               <XAxis
                 dataKey="week_start"
                 tickFormatter={formatDate}
-                stroke={axisLine}
-                tick={{ fill: textMuted, fontSize: 11 }}
+                stroke={chart.axisLine}
+                tick={{ fill: chart.textMuted, fontSize: 11 }}
               />
               <YAxis
                 domain={["dataMin - 1", "dataMax + 1"]}
-                stroke={axisLine}
-                tick={{ fill: textMuted, fontSize: 11 }}
+                stroke={chart.axisLine}
+                tick={{ fill: chart.textMuted, fontSize: 11 }}
                 width={44}
               />
               <Tooltip
                 labelFormatter={(v) => formatDate(String(v))}
                 contentStyle={tooltipStyle}
-                labelStyle={{ color: textSecondary }}
-                cursor={{ fill: gridline }}
+                labelStyle={{ color: chart.textSecondary }}
+                cursor={{ fill: chart.gridline }}
               />
-              <Bar dataKey="avg_weight_kg" name="Weekly avg (kg)" fill={seriesBlue} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="avg_weight_kg"
+                name="Weekly avg (kg)"
+                fill={chart.seriesBlue}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
       {logs.length > 0 && (
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <h2 className="mb-3 text-sm font-medium text-neutral-300">Recent entries</h2>
-          <ul className="divide-y divide-neutral-800">
+        <div className="rounded-xl border border-line bg-surface p-4">
+          <h2 className="mb-3 text-sm font-medium text-ink-secondary">Recent entries</h2>
+          <ul className="divide-y divide-line">
             {logs.slice(0, 10).map((log) => (
               <li key={log.id} className="flex items-center justify-between py-2 text-sm">
                 <div>
                   <span className="font-medium">{log.weight_kg} kg</span>
-                  <span className="ml-2 text-neutral-500">{formatDate(log.logged_at)}</span>
-                  {log.note && <span className="ml-2 text-neutral-600">— {log.note}</span>}
+                  <span className="ml-2 text-ink-muted">{formatDate(log.logged_at)}</span>
+                  {log.note && <span className="ml-2 text-ink-muted">— {log.note}</span>}
                 </div>
                 <button
                   onClick={() => handleDelete(log.id)}
-                  className="text-xs text-neutral-500 hover:text-red-400"
+                  className="text-xs text-ink-muted hover:text-red-400"
                 >
                   Delete
                 </button>

@@ -28,11 +28,11 @@ export default function WorkoutsSummaryCard() {
   return (
     <Link
       to="/workouts"
-      className="block rounded-xl border border-neutral-800 bg-neutral-900 p-4 transition hover:border-neutral-700"
+      className="block rounded-xl border border-line bg-surface p-4 transition hover:border-line-strong"
     >
-      <p className="text-xs text-neutral-500">This week's workouts</p>
+      <p className="text-xs text-ink-muted">This week's workouts</p>
       <p className="mt-1 text-2xl font-semibold">{thisWeek.length}</p>
-      <p className="mt-1 text-xs text-violet-400">
+      <p className="mt-1 text-xs text-accent">
         {workouts.length === 0 ? "Log your first workout" : "View all workouts"} &rarr;
       </p>
     </Link>

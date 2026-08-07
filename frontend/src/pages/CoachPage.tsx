@@ -81,22 +81,22 @@ export default function CoachPage() {
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">AI Coach</h1>
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-ink-muted">
             Grounded in your logged weight, workouts, and PRs — not generic advice.
           </p>
         </div>
         <button
           onClick={handleWeeklyCheckin}
           disabled={sending}
-          className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm transition hover:bg-neutral-800 disabled:opacity-50"
+          className="rounded-md border border-line-strong px-3 py-1.5 text-sm transition hover:bg-surface-hover disabled:opacity-50"
         >
           Weekly check-in
         </button>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-neutral-800 bg-neutral-900 p-4">
+      <div className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-line bg-surface p-4">
         {messages.length === 0 && (
-          <p className="text-center text-sm text-neutral-500">
+          <p className="text-center text-sm text-ink-muted">
             Ask about your training, a workout split, or your macros to get started.
           </p>
         )}
@@ -105,14 +105,14 @@ export default function CoachPage() {
             <div
               className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
                 m.role === "user"
-                  ? "bg-violet-500 text-white"
-                  : "border border-neutral-800 bg-neutral-950 text-neutral-100"
+                  ? "bg-accent text-white"
+                  : "border border-line bg-bg text-ink"
               }`}
             >
               <p className="whitespace-pre-wrap">{m.content}</p>
               {m.tool_payload && <ToolResultCard payload={m.tool_payload} />}
               <p
-                className={`mt-1 text-[10px] ${m.role === "user" ? "text-violet-200" : "text-neutral-600"}`}
+                className={`mt-1 text-[10px] ${m.role === "user" ? "text-white/70" : "text-ink-muted"}`}
               >
                 {formatTime(m.created_at)}
               </p>
@@ -121,7 +121,7 @@ export default function CoachPage() {
         ))}
         {sending && (
           <div className="flex justify-start">
-            <div className="rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm text-neutral-500">
+            <div className="rounded-xl border border-line bg-bg px-4 py-2 text-sm text-ink-muted">
               Thinking...
             </div>
           </div>
@@ -137,12 +137,12 @@ export default function CoachPage() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask your coach anything..."
           disabled={sending}
-          className="flex-1 rounded-md border border-neutral-700 bg-neutral-900 px-4 py-2 text-sm outline-none focus:border-violet-400 disabled:opacity-50"
+          className="flex-1 rounded-md border border-line-strong bg-surface px-4 py-2 text-sm outline-none focus:border-accent disabled:opacity-50"
         />
         <button
           type="submit"
           disabled={sending || !input.trim()}
-          className="rounded-md bg-violet-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           Send
         </button>

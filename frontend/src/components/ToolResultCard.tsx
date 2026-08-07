@@ -22,25 +22,25 @@ export default function ToolResultCard({ payload }: { payload: ToolPayload }) {
   }
 
   return (
-    <div className="mt-2 rounded-lg border border-neutral-700 bg-neutral-950/60 text-xs">
+    <div className="mt-2 rounded-lg border border-line-strong bg-bg/60 text-xs">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-left text-violet-400 hover:text-violet-300"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left text-accent hover:opacity-80"
       >
         <span>&#128295;</span>
         <span>{toolLabel[payload.name] ?? payload.name}</span>
-        <span className="ml-auto text-neutral-500">{expanded ? "hide" : "view details"}</span>
+        <span className="ml-auto text-ink-muted">{expanded ? "hide" : "view details"}</span>
       </button>
 
       {expanded && isSplitResult(payload) && (
-        <div className="space-y-2 border-t border-neutral-800 px-3 py-2">
-          <p className="text-neutral-400">{payload.result.split_type}</p>
+        <div className="space-y-2 border-t border-line px-3 py-2">
+          <p className="text-ink-secondary">{payload.result.split_type}</p>
           {payload.result.days.map((day) => (
             <div key={day.day_number}>
-              <p className="font-medium text-neutral-300">
+              <p className="font-medium text-ink">
                 Day {day.day_number}: {day.label}
               </p>
-              <ul className="ml-3 list-disc text-neutral-500">
+              <ul className="ml-3 list-disc text-ink-muted">
                 {day.exercises.map((ex) => (
                   <li key={ex.name}>
                     {ex.name} — {ex.sets}&times;{ex.reps}
@@ -53,7 +53,7 @@ export default function ToolResultCard({ payload }: { payload: ToolPayload }) {
       )}
 
       {expanded && isMacroResult(payload) && (
-        <div className="grid grid-cols-2 gap-2 border-t border-neutral-800 px-3 py-2 text-neutral-400">
+        <div className="grid grid-cols-2 gap-2 border-t border-line px-3 py-2 text-ink-secondary">
           <span>BMR: {payload.result.bmr}</span>
           <span>TDEE: {payload.result.tdee}</span>
           <span>Calories: {payload.result.target_calories}</span>

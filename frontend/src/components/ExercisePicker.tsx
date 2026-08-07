@@ -32,10 +32,10 @@ export function ExercisePicker({ value, onChange }: ExercisePickerProps) {
         }}
         onChange={(e) => setQuery(e.target.value)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+        className="w-full rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
       />
       {open && results.length > 0 && (
-        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md border border-neutral-700 bg-neutral-900 shadow-lg">
+        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-md border border-line-strong bg-surface shadow-lg">
           {results.map((ex) => (
             <li key={ex.id}>
               <button
@@ -44,10 +44,10 @@ export function ExercisePicker({ value, onChange }: ExercisePickerProps) {
                   onChange(ex);
                   setOpen(false);
                 }}
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-neutral-800"
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-surface-hover"
               >
                 {ex.name}
-                <span className="ml-2 text-xs text-neutral-500">{ex.equipment}</span>
+                <span className="ml-2 text-xs text-ink-muted">{ex.equipment}</span>
               </button>
             </li>
           ))}

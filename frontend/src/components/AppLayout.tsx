@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded-md px-3 py-1.5 text-sm transition ${
-    isActive ? "bg-neutral-800 text-white" : "text-neutral-400 hover:text-white"
+    isActive ? "bg-surface-hover text-ink" : "text-ink-secondary hover:text-ink"
   }`;
 
 export default function AppLayout() {
@@ -19,12 +19,12 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="min-h-svh bg-neutral-950 text-neutral-100">
-      <header className="border-b border-neutral-800">
+    <div className="min-h-svh bg-bg text-ink">
+      <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
             <span className="font-semibold tracking-tight">
-              Lift<span className="text-violet-400">Ryt</span> AI
+              Lift<span className="text-accent">Ryt</span> AI
             </span>
             <nav className="flex items-center gap-1">
               <NavLink to="/dashboard" className={navLinkClass} end>
@@ -51,10 +51,13 @@ export default function AppLayout() {
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            {user && <span className="text-sm text-neutral-500">{user.full_name}</span>}
+            {user && <span className="text-sm text-ink-muted">{user.full_name}</span>}
+            <NavLink to="/settings" className={navLinkClass}>
+              Settings
+            </NavLink>
             <button
               onClick={handleLogout}
-              className="rounded-md border border-neutral-700 px-3 py-1.5 text-sm transition hover:bg-neutral-800"
+              className="rounded-md border border-line-strong px-3 py-1.5 text-sm transition hover:bg-surface-hover"
             >
               Log out
             </button>

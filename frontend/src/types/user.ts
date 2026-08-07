@@ -4,6 +4,8 @@ export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 export type DietaryPreference = "none" | "vegetarian" | "vegan" | "pescatarian" | "keto" | "other";
 export type WeightUnit = "kg" | "lb";
 export type LengthUnit = "cm" | "in";
+export type ThemeMode = "light" | "dark";
+export type AccentColor = "violet" | "emerald";
 
 export interface UserProfile {
   id: string;
@@ -18,6 +20,7 @@ export interface UserProfile {
   dietary_preference: DietaryPreference;
   unit_weight: WeightUnit;
   unit_length: LengthUnit;
-  theme: string;
+  theme: ThemeMode;
+  accent_color: AccentColor;
   created_at: string;
 }

@@ -47,3 +47,7 @@ class User(Base, UUIDPkMixin, CreatedAtMixin, UpdatedAtMixin):
         SQLEnum(LengthUnit, name="length_unit_enum"), nullable=False, default=LengthUnit.CM
     )
     theme: Mapped[str] = mapped_column(String(30), nullable=False, default="dark")
+    # Separate from theme (light/dark mode) — accent is an orthogonal color
+    # choice that applies in either mode, added in step 11 alongside the
+    # actual theme system that uses it.
+    accent_color: Mapped[str] = mapped_column(String(30), nullable=False, default="violet")

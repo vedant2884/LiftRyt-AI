@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { calculateMacros, fetchActiveMacroTarget, fetchMacroHistory } from "../api/macros";
-import { seriesAqua, seriesBlue, seriesOrange } from "../lib/chartTheme";
+import { getChartTheme } from "../lib/chartTheme";
+import { useThemeStore } from "../store/themeStore";
 import type { MacroGoal, MacroTarget } from "../types/macro";
 
 const GOALS: { value: MacroGoal; label: string; hint: string }[] = [
@@ -15,6 +16,9 @@ function formatDate(iso: string): string {
 }
 
 export default function MacroCalculatorPage() {
+  const mode = useThemeStore((s) => s.theme);
+  const chart = getChartTheme(mode);
+
   const [active, setActive] = useState<MacroTarget | null>(null);
   const [history, setHistory] = useState<MacroTarget[]>([]);
   const [goal, setGoal] = useState<MacroGoal>("maintain");
@@ -57,8 +61,8 @@ export default function MacroCalculatorPage() {
     <main className="mx-auto max-w-3xl px-6 py-10">
       <h1 className="mb-6 text-2xl font-semibold">Macro & Calorie Calculator</h1>
 
-      <div className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-        <p className="mb-3 text-sm text-neutral-400">Goal</p>
+      <div className="mb-8 rounded-xl border border-line bg-surface p-4">
+        <p className="mb-3 text-sm text-ink-secondary">Goal</p>
         <div className="mb-4 grid grid-cols-3 gap-3">
           {GOALS.map((g) => (
             <button
@@ -66,19 +70,19 @@ export default function MacroCalculatorPage() {
               onClick={() => setGoal(g.value)}
               className={`rounded-lg border p-3 text-left transition ${
                 goal === g.value
-                  ? "border-violet-400 bg-violet-500/10"
-                  : "border-neutral-700 hover:border-neutral-600"
+                  ? "border-accent bg-accent/10"
+                  : "border-line-strong hover:border-ink-muted"
               }`}
             >
               <p className="font-medium">{g.label}</p>
-              <p className="text-xs text-neutral-500">{g.hint}</p>
+              <p className="text-xs text-ink-muted">{g.hint}</p>
             </button>
           ))}
         </div>
 
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-neutral-500" htmlFor="weight-override">
+            <label className="text-xs text-ink-muted" htmlFor="weight-override">
               Weight override (kg, optional)
             </label>
             <input
@@ -88,13 +92,13 @@ export default function MacroCalculatorPage() {
               placeholder="uses latest logged weight"
               value={weightOverride}
               onChange={(e) => setWeightOverride(e.target.value)}
-              className="w-56 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+              className="w-56 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <button
             onClick={handleCalculate}
             disabled={loading}
-            className="rounded-md bg-violet-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+            className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "Calculating..." : "Calculate"}
           </button>
@@ -105,53 +109,51 @@ export default function MacroCalculatorPage() {
       {active && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-              <p className="text-xs text-neutral-500">BMR</p>
+            <div className="rounded-xl border border-line bg-surface p-4">
+              <p className="text-xs text-ink-muted">BMR</p>
               <p className="mt-1 text-xl font-semibold">{active.bmr}</p>
             </div>
-            <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-              <p className="text-xs text-neutral-500">TDEE</p>
+            <div className="rounded-xl border border-line bg-surface p-4">
+              <p className="text-xs text-ink-muted">TDEE</p>
               <p className="mt-1 text-xl font-semibold">{active.tdee}</p>
             </div>
-            <div className="col-span-2 rounded-xl border border-violet-400/40 bg-violet-500/10 p-4">
-              <p className="text-xs text-neutral-400">Target calories</p>
-              <p className="mt-1 text-2xl font-semibold text-violet-300">
-                {active.target_calories} kcal
-              </p>
+            <div className="col-span-2 rounded-xl border border-accent/40 bg-accent/10 p-4">
+              <p className="text-xs text-ink-secondary">Target calories</p>
+              <p className="mt-1 text-2xl font-semibold text-accent">{active.target_calories} kcal</p>
             </div>
           </div>
 
-          <div className="mb-8 rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-            <p className="mb-3 text-sm font-medium text-neutral-300">Macro split</p>
+          <div className="mb-8 rounded-xl border border-line bg-surface p-4">
+            <p className="mb-3 text-sm font-medium text-ink-secondary">Macro split</p>
             <div className="mb-3 flex h-4 overflow-hidden rounded-full">
               <div
-                style={{ width: `${(proteinKcal / totalKcal) * 100}%`, background: seriesBlue }}
+                style={{ width: `${(proteinKcal / totalKcal) * 100}%`, background: chart.seriesBlue }}
               />
               <div
-                style={{ width: `${(carbsKcal / totalKcal) * 100}%`, background: seriesOrange }}
+                style={{ width: `${(carbsKcal / totalKcal) * 100}%`, background: chart.seriesOrange }}
               />
-              <div style={{ width: `${(fatKcal / totalKcal) * 100}%`, background: seriesAqua }} />
+              <div style={{ width: `${(fatKcal / totalKcal) * 100}%`, background: chart.seriesAqua }} />
             </div>
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesBlue }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: chart.seriesBlue }} />
                 <div>
                   <p className="font-medium">{active.target_protein_g}g</p>
-                  <p className="text-xs text-neutral-500">Protein</p>
+                  <p className="text-xs text-ink-muted">Protein</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesOrange }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: chart.seriesOrange }} />
                 <div>
                   <p className="font-medium">{active.target_carbs_g}g</p>
-                  <p className="text-xs text-neutral-500">Carbs</p>
+                  <p className="text-xs text-ink-muted">Carbs</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: seriesAqua }} />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: chart.seriesAqua }} />
                 <div>
                   <p className="font-medium">{active.target_fat_g}g</p>
-                  <p className="text-xs text-neutral-500">Fat</p>
+                  <p className="text-xs text-ink-muted">Fat</p>
                 </div>
               </div>
             </div>
@@ -160,17 +162,17 @@ export default function MacroCalculatorPage() {
       )}
 
       {history.length > 1 && (
-        <div className="rounded-xl border border-neutral-800 bg-neutral-900 p-4">
-          <p className="mb-3 text-sm font-medium text-neutral-300">History</p>
-          <ul className="divide-y divide-neutral-800">
+        <div className="rounded-xl border border-line bg-surface p-4">
+          <p className="mb-3 text-sm font-medium text-ink-secondary">History</p>
+          <ul className="divide-y divide-line">
             {history.map((t) => (
               <li key={t.id} className="flex items-center justify-between py-2 text-sm">
                 <span className="capitalize">
                   {t.goal} &middot; {t.target_calories} kcal
                 </span>
-                <span className="text-xs text-neutral-500">
+                <span className="text-xs text-ink-muted">
                   {formatDate(t.created_at)}
-                  {t.is_active && <span className="ml-2 text-violet-400">active</span>}
+                  {t.is_active && <span className="ml-2 text-accent">active</span>}
                 </span>
               </li>
             ))}

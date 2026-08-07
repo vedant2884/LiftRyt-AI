@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { signup } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
+import { useThemeStore } from "../store/themeStore";
 import { FormField, inputClass } from "../components/FormField";
 import type { ActivityLevel, DietaryPreference, ExperienceLevel, Sex } from "../types/user";
 
@@ -46,6 +47,8 @@ export default function SignupPage() {
         dietary_preference: dietaryPreference,
       });
       setAuth(access_token, user);
+      useThemeStore.getState().setTheme(user.theme);
+      useThemeStore.getState().setAccentColor(user.accent_color);
       navigate("/dashboard");
     } catch (err) {
       const detail = isAxiosError<{ detail?: string }>(err)
@@ -58,10 +61,10 @@ export default function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-neutral-950 px-4 py-10 text-neutral-100">
+    <main className="flex min-h-svh items-center justify-center bg-bg px-4 py-10 text-ink">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-lg space-y-4 rounded-xl border border-neutral-800 bg-neutral-900 p-8"
+        className="w-full max-w-lg space-y-4 rounded-xl border border-line bg-surface p-8"
       >
         <h1 className="text-2xl font-semibold">Create your account</h1>
         {error && (
@@ -215,13 +218,13 @@ export default function SignupPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-violet-500 py-2 font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+          className="w-full rounded-md bg-accent py-2 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Create account"}
         </button>
-        <p className="text-center text-sm text-neutral-400">
+        <p className="text-center text-sm text-ink-secondary">
           Already have an account?{" "}
-          <Link to="/login" className="text-violet-400 hover:underline">
+          <Link to="/login" className="text-accent hover:underline">
             Log in
           </Link>
         </p>

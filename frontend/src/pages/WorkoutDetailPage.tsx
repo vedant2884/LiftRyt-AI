@@ -70,11 +70,11 @@ export default function WorkoutDetailPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <Link to="/workouts" className="text-sm text-violet-400 hover:underline">
+      <Link to="/workouts" className="text-sm text-accent hover:underline">
         &larr; All workouts
       </Link>
       <h1 className="mt-2 mb-1 text-2xl font-semibold">{workout.name}</h1>
-      <p className="mb-6 text-sm text-neutral-500">{formatDate(workout.performed_at)}</p>
+      <p className="mb-6 text-sm text-ink-muted">{formatDate(workout.performed_at)}</p>
 
       {prBanner && (
         <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
@@ -84,12 +84,12 @@ export default function WorkoutDetailPage() {
 
       <form
         onSubmit={handleAddSet}
-        className="mb-8 space-y-3 rounded-xl border border-neutral-800 bg-neutral-900 p-4"
+        className="mb-8 space-y-3 rounded-xl border border-line bg-surface p-4"
       >
         <ExercisePicker value={exercise} onChange={setExercise} />
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-neutral-500" htmlFor="reps">
+            <label className="text-xs text-ink-muted" htmlFor="reps">
               Reps
             </label>
             <input
@@ -99,11 +99,11 @@ export default function WorkoutDetailPage() {
               required
               value={reps}
               onChange={(e) => setReps(e.target.value)}
-              className="w-20 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+              className="w-20 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-neutral-500" htmlFor="weight">
+            <label className="text-xs text-ink-muted" htmlFor="weight">
               Weight (kg)
             </label>
             <input
@@ -114,11 +114,11 @@ export default function WorkoutDetailPage() {
               required
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-24 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+              className="w-24 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-neutral-500" htmlFor="rpe">
+            <label className="text-xs text-ink-muted" htmlFor="rpe">
               RPE
             </label>
             <input
@@ -129,22 +129,22 @@ export default function WorkoutDetailPage() {
               max={10}
               value={rpe}
               onChange={(e) => setRpe(e.target.value)}
-              className="w-20 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm outline-none focus:border-violet-400"
+              className="w-20 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
           </div>
-          <label className="flex items-center gap-2 pb-2 text-sm text-neutral-400">
+          <label className="flex items-center gap-2 pb-2 text-sm text-ink-secondary">
             <input
               type="checkbox"
               checked={isWarmup}
               onChange={(e) => setIsWarmup(e.target.checked)}
-              className="rounded border-neutral-700"
+              className="rounded border-line-strong"
             />
             Warmup
           </label>
           <button
             type="submit"
             disabled={saving || !exercise}
-            className="rounded-md bg-violet-500 px-5 py-2 text-sm font-medium text-white transition hover:bg-violet-400 disabled:opacity-50"
+            className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
           >
             {saving ? "Adding..." : "Add set"}
           </button>
@@ -152,26 +152,26 @@ export default function WorkoutDetailPage() {
       </form>
 
       {workout.sets.length === 0 ? (
-        <p className="text-sm text-neutral-500">No sets logged yet.</p>
+        <p className="text-sm text-ink-muted">No sets logged yet.</p>
       ) : (
         <ul className="space-y-2">
           {workout.sets.map((s) => (
             <li
               key={s.id}
-              className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-900 p-3"
+              className="flex items-center justify-between rounded-xl border border-line bg-surface p-3"
             >
               <div className="flex items-center gap-2">
-                <span className="w-6 text-xs text-neutral-600">#{s.set_number}</span>
+                <span className="w-6 text-xs text-ink-muted">#{s.set_number}</span>
                 <div>
                   <p className="text-sm font-medium">
                     {s.exercise_name}
                     {s.is_warmup && (
-                      <span className="ml-2 rounded-full bg-neutral-800 px-2 py-0.5 text-xs text-neutral-400">
+                      <span className="ml-2 rounded-full bg-surface-hover px-2 py-0.5 text-xs text-ink-secondary">
                         warmup
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs text-ink-muted">
                     {s.reps} reps &times; {s.weight_kg} kg
                     {s.rpe != null && ` @ RPE ${s.rpe}`}
                   </p>
@@ -179,7 +179,7 @@ export default function WorkoutDetailPage() {
               </div>
               <button
                 onClick={() => handleDeleteSet(s.id)}
-                className="text-xs text-neutral-500 hover:text-red-400"
+                className="text-xs text-ink-muted hover:text-red-400"
               >
                 Delete
               </button>

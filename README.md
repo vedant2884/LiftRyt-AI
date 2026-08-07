@@ -154,6 +154,36 @@ The **Weekly check-in** button generates an on-demand recap (weight trend +
 training volume + one specific suggestion) from real logged data in a
 single LLM call.
 
+### Theme system
+
+Light/dark mode and an accent color (violet or emerald) are both real,
+persisted preferences — not just a CSS toggle. `users.theme` and
+`users.accent_color` (the latter added in step 11's migration) are saved via
+the same `PATCH /auth/me` from step 3, and `frontend/src/store/themeStore.ts`
+stamps `data-theme`/`data-accent` attributes onto `<html>` on login and on
+every change; `frontend/src/index.css` maps those attributes to CSS custom
+properties, which Tailwind v4's `@theme` block turns into ordinary utility
+classes (`bg-surface`, `text-ink`, `bg-accent`, ...) that resolve at
+*runtime*, not at Tailwind's build time — the mechanism that makes a live
+toggle possible at all instead of needing a page reload.
+
+Status/identity colors (PR difficulty badges, push/pull/legs/core category
+badges, delete-button red) are deliberately **not** theme tokens — they stay
+literal Tailwind colors so a badge's meaning never depends on which accent
+the viewer happens to have picked, matching the dataviz skill's "status
+colors are fixed, never themed" rule.
+
+Try it: **Settings** → switch mode and accent, then reload — the choice
+survives (it's reading your saved profile, not local-only state) and every
+page, including the Recharts charts (`frontend/src/lib/chartTheme.ts` picks
+a light or dark categorical palette to match), follows it.
+
+Units (kg/lb, cm/in) are also real, saved preferences, applied to weight and
+height wherever they're the primary figure (dashboard, weight tracker) —
+scoped there deliberately rather than as an exhaustive retrofit of every
+numeric label across the app, since that's a large, mostly mechanical task
+orthogonal to the theme system itself.
+
 ### Running services individually (without Docker)
 
 Backend:
