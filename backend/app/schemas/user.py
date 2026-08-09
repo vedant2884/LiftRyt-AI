@@ -9,6 +9,10 @@ from app.models.enums import ActivityLevel, DietaryPreference, ExperienceLevel, 
 ThemeMode = Literal["light", "dark"]
 AccentColor = Literal["violet", "emerald"]
 
+# Shared between signup, profile updates, and Google-signup profile
+# completion so the uniqueness/shape rule lives in exactly one place.
+USERNAME_PATTERN = r"^[a-zA-Z0-9_]{3,30}$"
+
 
 class UserProfile(BaseModel):
     """API-facing view of a user. Deliberately excludes hashed_password."""
@@ -18,6 +22,11 @@ class UserProfile(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str
+    username: str
+    avatar_url: str | None = None
+    google_avatar_url: str | None = None
+    has_password: bool
+    has_completed_onboarding: bool
     age: int
     sex: Sex
     height_cm: float
@@ -37,6 +46,8 @@ class UserProfileUpdate(BaseModel):
     applied (see exclude_unset in the PATCH /auth/me handler)."""
 
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
+    username: str | None = Field(default=None, pattern=USERNAME_PATTERN)
+    avatar_url: str | None = Field(default=None, max_length=1024)
     age: int | None = Field(default=None, ge=13, le=120)
     sex: Sex | None = None
     height_cm: float | None = Field(default=None, gt=0, le=300)

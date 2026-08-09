@@ -11,6 +11,11 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string;
+  username: string;
+  avatar_url: string | null;
+  google_avatar_url: string | null;
+  has_password: boolean;
+  has_completed_onboarding: boolean;
   age: number;
   sex: Sex;
   height_cm: number;

@@ -34,3 +34,11 @@ openai==1.59.6
 pytest==8.3.4
 pytest-asyncio==0.25.0
 httpx==0.28.1
+
+# Step 13: Google Sign-In — verifies Firebase ID tokens against Google's
+# public keys (google-auth), no Firebase Admin SDK / service account needed.
+google-auth==2.36.0
+
+# Avatar upload — python-multipart is FastAPI's required parser for
+# UploadFile/File(...) form bodies.
+python-multipart==0.0.20

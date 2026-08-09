@@ -1,70 +1,108 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { logout as logoutApi } from "../api/auth";
-import { useAuthStore } from "../store/authStore";
+import { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
+import { CalendarDays, LayoutDashboard, Library, Menu, MessageCircle, PieChart, Scale, X } from "lucide-react";
+import AccountMenu from "./AccountMenu";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-1.5 text-sm transition ${
+  `flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm transition ${
     isActive ? "bg-surface-hover text-ink" : "text-ink-secondary hover:text-ink"
   }`;
 
-export default function AppLayout() {
-  const user = useAuthStore((s) => s.user);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-  const navigate = useNavigate();
+const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
+    isActive ? "bg-surface-hover text-ink" : "text-ink-secondary hover:text-ink"
+  }`;
 
-  async function handleLogout() {
-    await logoutApi();
-    clearAuth();
-    navigate("/login");
-  }
+const NAV_LINKS = [
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/coach", label: "Coach", icon: MessageCircle },
+  { to: "/weight", label: "Weight", icon: Scale },
+  { to: "/library", label: "Library", icon: Library },
+  { to: "/macros", label: "Macros", icon: PieChart },
+  { to: "/splits", label: "Splits", icon: CalendarDays },
+];
+
+export default function AppLayout() {
+  const location = useLocation();
+  const reduceMotion = useReducedMotion();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div className="min-h-svh bg-bg text-ink">
-      <header className="border-b border-line">
+      <header className="sticky top-0 z-30 border-b border-line bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-6">
-            <span className="font-semibold tracking-tight">
+            <Link to="/" className="font-semibold tracking-tight" onClick={() => setMenuOpen(false)}>
               Lift<span className="text-accent">Ryt</span> AI
-            </span>
-            <nav className="flex items-center gap-1">
-              <NavLink to="/dashboard" className={navLinkClass} end>
-                Dashboard
-              </NavLink>
-              <NavLink to="/coach" className={navLinkClass}>
-                Coach
-              </NavLink>
-              <NavLink to="/weight" className={navLinkClass}>
-                Weight
-              </NavLink>
-              <NavLink to="/workouts" className={navLinkClass}>
-                Workouts
-              </NavLink>
-              <NavLink to="/exercises" className={navLinkClass}>
-                Exercises
-              </NavLink>
-              <NavLink to="/macros" className={navLinkClass}>
-                Macros
-              </NavLink>
-              <NavLink to="/splits" className={navLinkClass}>
-                Splits
-              </NavLink>
+            </Link>
+            <nav className="hidden items-center gap-1 md:flex">
+              {NAV_LINKS.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <NavLink key={link.to} to={link.to} className={navLinkClass} end={link.end}>
+                    <Icon size={15} strokeWidth={2} />
+                    {link.label}
+                  </NavLink>
+                );
+              })}
             </nav>
           </div>
           <div className="flex items-center gap-3">
-            {user && <span className="text-sm text-ink-muted">{user.full_name}</span>}
-            <NavLink to="/settings" className={navLinkClass}>
-              Settings
-            </NavLink>
+            <div className="hidden md:block">
+              <AccountMenu />
+            </div>
+
             <button
-              onClick={handleLogout}
-              className="rounded-md border border-line-strong px-3 py-1.5 text-sm transition hover:bg-surface-hover"
+              type="button"
+              onClick={() => setMenuOpen((open) => !open)}
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-line-strong transition hover:bg-surface-hover active:scale-[0.97] md:hidden"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
             >
-              Log out
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
+            <div className="md:hidden">
+              <AccountMenu />
+            </div>
           </div>
         </div>
+
+        {menuOpen && (
+          <nav className="space-y-1 border-t border-line px-4 py-3 md:hidden">
+            {NAV_LINKS.map((link) => {
+              const Icon = link.icon;
+              return (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={mobileNavLinkClass}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon size={16} strokeWidth={2} />
+                  {link.label}
+                </NavLink>
+              );
+            })}
+          </nav>
+        )}
       </header>
-      <Outlet />
+
+      {/* Enter-only fade/slide, keyed by path so it re-triggers on every
+          navigation. A true coordinated exit animation would need the
+          top-level <Routes> to hold the outgoing location until it
+          finishes, which isn't worth the plumbing for something this
+          subtle — Outlet already swaps instantly, so this animates the
+          incoming page in rather than animating the outgoing one out. */}
+      <motion.div
+        key={location.pathname}
+        initial={reduceMotion ? undefined : { opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
+      >
+        <Outlet />
+      </motion.div>
     </div>
   );
 }
