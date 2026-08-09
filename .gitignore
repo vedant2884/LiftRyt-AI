@@ -26,3 +26,6 @@ Thumbs.db
 
 # Docker
 *.pid
+
+# User-uploaded files (local disk storage, backend/app/core/storage.py)
+backend/uploads/

@@ -80,6 +80,7 @@ async def test_user(db_session: AsyncSession) -> User:
         email=f"{uuid.uuid4()}@example.com",
         hashed_password="not-a-real-hash",
         full_name="Test User",
+        username=f"test_{uuid.uuid4().hex[:12]}",
         age=30,
         sex=Sex.MALE,
         height_cm=180,
