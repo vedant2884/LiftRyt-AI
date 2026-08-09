@@ -11,21 +11,28 @@ are all ordinary code, testable independently of any LLM call.
 """
 
 import json
+import uuid
+from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_message import ChatMessage
+from app.models.chat_session import ChatSession
 from app.models.enums import ChatRole
 from app.models.user import User
+from app.schemas.chat import ExerciseChatContext
 from app.services.agent_tools import TOOL_DEFINITIONS, execute_tool
 from app.services.coach_context import build_context
+from app.services.embeddings import embed_text
 from app.services.llm.provider import LLMProviderError, get_llm_client, get_llm_model
 
 # How many recent turns of conversation ride along as context. Kept small —
 # this is a chat-completions API with no prompt caching across turns, so
 # every message here is repaid in tokens on every single request.
 HISTORY_LIMIT = 12
+
+TITLE_MAX_LENGTH = 48
 
 SYSTEM_PROMPT_TEMPLATE = """You are LiftRyt AI's gym coach: direct, encouraging, and grounded in the user's real training data. Never invent a workout split or estimate calorie/macro numbers yourself when a tool exists to compute them correctly.
 
@@ -35,23 +42,49 @@ Current context (retrieved from their logged data):
 {context}
 
 Rules:
-- If asked for a workout split, program, or routine, call generate_workout_split — never write one freehand.
-- If asked to set or recalculate calorie/macro targets (or explicitly about cutting/bulking), call calculate_macros — never estimate these yourself.
-- Don't call calculate_macros just to answer a general progress or weight-trend question — the current context above already has their active target and weight trend; only call it when they actually want a new target calculated.
-- When you use a tool's output, briefly explain *why* using the reasons it returns — the user should understand the logic, not just get a list of numbers or exercises.
-- Keep answers focused and practical. This is a coach, not an encyclopedia."""
+- Decide whether to call a tool based only on the user's CURRENT message. A tool being called earlier in this conversation is never itself a reason to call it again now.
+- If the current message is a greeting, small talk, thanks, or a general question that isn't actually asking for a new split or new macro numbers, respond in plain conversational text and call no tool at all, even if the conversation so far has involved tools.
+- If the current message asks for a workout split, program, or routine, call generate_workout_split. Never write one freehand.
+- If the current message asks to set or recalculate calorie or macro targets, or explicitly asks about cutting or bulking, call calculate_macros. Never estimate these yourself.
+- Don't call calculate_macros just to answer a general progress or weight-trend question. The context above already has their active target and weight trend, so only call it when they actually want a new target calculated.
+- After a tool call, the app already renders the exercise list or macro numbers as a structured card, so don't repeat that data in your reply. Write 2-3 short sentences explaining *why* it's a good fit, using the reasons the tool returned.
+- Keep answers focused and practical. This is a coach, not an encyclopedia.
+- Write in plain, direct sentences. Never use em dashes or en dashes; use a period, comma, or "and"/"with" instead. Use short paragraphs and, when listing multiple items, real markdown bullet points rather than a run-on sentence."""
 
 
-async def run_agent(db: AsyncSession, user: User, user_message: str) -> ChatMessage:
+async def run_agent(
+    db: AsyncSession,
+    user: User,
+    session: ChatSession,
+    user_message: str,
+    exercise_context: ExerciseChatContext | None = None,
+) -> ChatMessage:
     # Fetch history *before* persisting this turn's user message, so it
     # isn't duplicated when appended to the outgoing messages list below.
-    history = await _recent_history(db, user)
+    history = await _recent_history(db, session.id)
 
-    user_msg = ChatMessage(user_id=user.id, role=ChatRole.USER, content=user_message)
+    user_msg = ChatMessage(
+        user_id=user.id, session_id=session.id, role=ChatRole.USER, content=user_message
+    )
+    try:
+        user_msg.embedding = embed_text(user_message)
+    except Exception:
+        # Same "enhancement, not a requirement" reasoning as the retrieval
+        # side (coach_context.py) — an embedding hiccup shouldn't block the
+        # user's message from being sent at all.
+        pass
     db.add(user_msg)
+
+    if session.title is None:
+        session.title = _generate_title(user_message)
+    # updated_at has onupdate=func.now(), but that only fires when SQLAlchemy
+    # actually issues an UPDATE for this row — which title-on-first-message
+    # doesn't guarantee on every later turn, so set it explicitly to keep
+    # the session-list sort ("most recently active") correct on every turn.
+    session.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
-    context = await build_context(db, user, user_message)
+    context = await build_context(db, user, session.id, user_message)
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
         age=user.age,
         sex=user.sex.value,
@@ -61,6 +94,24 @@ async def run_agent(db: AsyncSession, user: User, user_message: str) -> ChatMess
         goal_weight_kg=user.goal_weight_kg if user.goal_weight_kg is not None else "not set",
         context=context,
     )
+    if exercise_context is not None:
+        # From the Library detail modal's "Ask Coach" box — the user is
+        # looking at this exact exercise right now, so answer about it
+        # directly rather than asking them to name it.
+        muscles = ", ".join(exercise_context.primary_muscles)
+        secondary = (
+            f" (secondary: {', '.join(exercise_context.secondary_muscles)})"
+            if exercise_context.secondary_muscles
+            else ""
+        )
+        system_prompt += (
+            f"\n\nThe user currently has this exercise open in the Library and is asking about it "
+            f"specifically, even if their message doesn't name it: \"{exercise_context.name}\" "
+            f"— targets {muscles}{secondary}, {exercise_context.equipment}, "
+            f"{exercise_context.category} category, {exercise_context.difficulty} difficulty. "
+            f"Reference it by name in your answer and ground your answer in the user's own profile, "
+            f"goals, and any injuries or limitations they've mentioned."
+        )
 
     messages: list[dict] = (
         [{"role": "system", "content": system_prompt}] + history + [{"role": "user", "content": user_message}]
@@ -111,23 +162,44 @@ async def run_agent(db: AsyncSession, user: User, user_message: str) -> ChatMess
 
     assistant_msg = ChatMessage(
         user_id=user.id,
+        session_id=session.id,
         role=ChatRole.ASSISTANT,
         content=final_content or "",
         tool_name=tool_name_used,
         tool_payload=tool_payload,
     )
+    if final_content:
+        try:
+            assistant_msg.embedding = embed_text(final_content)
+        except Exception:
+            pass
     db.add(assistant_msg)
     await db.commit()
     await db.refresh(assistant_msg)
     return assistant_msg
 
 
-async def _recent_history(db: AsyncSession, user: User) -> list[dict]:
+def _generate_title(first_message: str) -> str:
+    """A short label for the session list, truncated at a word boundary.
+
+    Deterministic rather than an extra LLM call: titling a conversation
+    from its own first line doesn't need a model, and this app already
+    prefers real code over an LLM call wherever real code can do the job
+    (see split_generator, macro_calculator).
+    """
+    text = " ".join(first_message.split())
+    if len(text) <= TITLE_MAX_LENGTH:
+        return text
+    truncated = text[:TITLE_MAX_LENGTH].rsplit(" ", 1)[0]
+    return f"{truncated}..."
+
+
+async def _recent_history(db: AsyncSession, session_id: uuid.UUID) -> list[dict]:
     rows = (
         await db.scalars(
             select(ChatMessage)
             .where(
-                ChatMessage.user_id == user.id,
+                ChatMessage.session_id == session_id,
                 ChatMessage.role.in_([ChatRole.USER, ChatRole.ASSISTANT]),
             )
             .order_by(ChatMessage.created_at.desc())

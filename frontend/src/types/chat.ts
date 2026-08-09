@@ -26,9 +26,29 @@ export interface ToolPayload {
 
 export interface ChatMessage {
   id: string;
+  session_id: string;
   role: ChatRole;
   content: string;
   tool_name: string | null;
   tool_payload: ToolPayload | null;
   created_at: string;
+}
+
+/** Sent alongside a message from the exercise detail modal's "Ask Coach"
+ * box so the coach knows which exercise is open without the user typing
+ * its name. Mirrors app.schemas.chat.ExerciseChatContext. */
+export interface ExerciseChatContext {
+  name: string;
+  primary_muscles: string[];
+  secondary_muscles: string[];
+  equipment: string;
+  category: string;
+  difficulty: string;
+}
+
+export interface ChatSession {
+  id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
 }

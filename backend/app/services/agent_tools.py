@@ -11,10 +11,9 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.enums import ExperienceLevel, MacroGoal
+from app.models.enums import ExperienceLevel, MacroGoal, TrainingGoal
 from app.models.user import User
-from app.schemas.split import TrainingGoal
-from app.services import macro_target_service, split_generator
+from app.services import macro_target_service, split_service
 
 TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
@@ -25,7 +24,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "Generate a structured, rule-based workout split (which days train "
                 "which muscle groups, with specific exercises, sets, and reps) pulled "
                 "from the real exercise database. Use this whenever the user asks for "
-                "a training split, program, or routine — never invent one freehand."
+                "a training split, program, or routine. Never invent one freehand."
             ),
             "parameters": {
                 "type": "object",
@@ -52,8 +51,8 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
                 "Calculate the user's BMR, TDEE, and a calorie/macro target for a "
                 "given goal, using Mifflin-St Jeor and their most recently logged "
                 "weight. Saves the result as their new active target. Use this "
-                "whenever the user asks about calories, macros, cutting, or bulking "
-                "— never estimate these numbers yourself."
+                "whenever the user asks about calories, macros, cutting, or bulking. "
+                "Never estimate these numbers yourself."
             ),
             "parameters": {
                 "type": "object",
@@ -71,38 +70,27 @@ async def execute_tool(
     db: AsyncSession, user: User, tool_name: str, arguments: dict[str, Any]
 ) -> dict[str, Any]:
     if tool_name == "generate_workout_split":
-        return await _generate_workout_split(db, arguments)
+        return await _generate_workout_split(db, user, arguments)
     if tool_name == "calculate_macros":
         return await _calculate_macros(db, user, arguments)
     return {"error": f"Unknown tool: {tool_name}"}
 
 
-async def _generate_workout_split(db: AsyncSession, arguments: dict[str, Any]) -> dict[str, Any]:
-    plan = await split_generator.generate_split(
+async def _generate_workout_split(db: AsyncSession, user: User, arguments: dict[str, Any]) -> dict[str, Any]:
+    # Goes through split_service (not split_generator directly) so a split
+    # the coach generates becomes the user's active split too, exactly like
+    # generating one from the Splits page — "the active split" means the
+    # same thing regardless of which path created it, which is what the
+    # streak/adherence tracking and the Splits page's completion checkboxes
+    # depend on.
+    split = await split_service.generate_and_save_split(
         db,
+        user,
         days_per_week=arguments["days_per_week"],
         experience_level=ExperienceLevel(arguments["experience_level"]),
         goal=TrainingGoal(arguments["goal"]),
     )
-    return {
-        "split_type": plan.split_type,
-        "days": [
-            {
-                "day_number": day.day_number,
-                "label": day.label,
-                "exercises": [
-                    {
-                        "name": pick.exercise.name,
-                        "sets": pick.sets,
-                        "reps": pick.reps,
-                        "reason": pick.reason,
-                    }
-                    for pick in day.exercises
-                ],
-            }
-            for day in plan.days
-        ],
-    }
+    return split.plan
 
 
 async def _calculate_macros(db: AsyncSession, user: User, arguments: dict[str, Any]) -> dict[str, Any]:

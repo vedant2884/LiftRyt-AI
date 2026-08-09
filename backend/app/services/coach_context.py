@@ -1,25 +1,30 @@
 """Assembles the context block injected into the AI coach's system prompt:
-recent weight trend, PRs, training volume, active macro target, and
-exercises semantically relevant to the user's specific message.
+recent weight trend, PRs, training volume, active macro target, exercises
+semantically relevant to the user's specific message, and a handful of
+relevant older chat messages pulled from past sessions.
 
 This is step 9's RAG pipeline applied: retrieval happens here, in code,
 before the LLM ever sees the message — not something the model is asked to
 "remember" or infer on its own.
 """
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.macro_target import MacroTarget
 from app.models.user import User
-from app.services import exercise_retrieval, weight_analytics, workout_analytics
+from app.services import chat_memory, exercise_retrieval, weight_analytics, workout_analytics
 from app.services.macro_target_service import resolve_weight_kg
 
 RELEVANT_EXERCISE_COUNT = 5
 RECENT_PR_COUNT = 5
 
 
-async def build_context(db: AsyncSession, user: User, user_message: str) -> str:
+async def build_context(
+    db: AsyncSession, user: User, session_id: uuid.UUID, user_message: str
+) -> str:
     sections: list[str] = []
 
     weight_kg = await resolve_weight_kg(db, user)
@@ -74,5 +79,21 @@ async def build_context(db: AsyncSession, user: User, user_message: str) -> str:
             for ex in relevant_exercises
         )
         sections.append(f"Exercises from the database relevant to this message: {ex_text}.")
+
+    try:
+        relevant_memories = await chat_memory.find_relevant_past_messages(
+            db, user.id, session_id, user_message
+        )
+    except Exception:
+        # Same reasoning as the exercise search above: an enhancement, not
+        # something that should take down the whole turn if it fails.
+        relevant_memories = []
+
+    if relevant_memories:
+        memory_text = " / ".join(
+            f'{"You" if m.role.value == "assistant" else "User"} on {m.created_at.date()}: "{m.content}"'
+            for m in relevant_memories
+        )
+        sections.append(f"Relevant messages from earlier conversations: {memory_text}")
 
     return "\n".join(f"- {line}" for line in sections)
