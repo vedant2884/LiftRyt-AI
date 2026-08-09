@@ -8,17 +8,23 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:branding": "node scripts/generate-branding.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "axios": "^1.19.0",
     "clsx": "^2.1.1",
+    "firebase": "^12.17.1",
     "framer-motion": "^13.0.0",
+    "html-to-image": "^1.11.13",
+    "lucide-react": "^1.30.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.2",
     "recharts": "^3.10.1",
+    "remark-gfm": "^4.0.1",
     "tailwindcss": "^4.3.3",
     "zustand": "^5.0.14"
   },
@@ -32,6 +38,9 @@
     "@vitejs/plugin-react": "^6.0.5",
     "jsdom": "^30.0.1",
     "oxlint": "^1.75.0",
+    "png-to-ico": "^3.0.2",
+    "potrace": "^2.1.8",
+    "sharp": "^0.35.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.0",
     "vitest": "^4.1.10"

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     # Comma-separated in the environment, parsed into a list below.
     cors_origins: str = "http://localhost:5173"
+    # Used to build links that point back at the SPA (password reset).
+    frontend_url: str = "http://localhost:5173"
 
     # Set via docker-compose.yml (composed from POSTGRES_* vars there); the
     # localhost fallback here only matters when running the backend outside
@@ -41,6 +43,17 @@ class Settings(BaseSettings):
     # backend container — the right default for a natively-installed Ollama.
     ollama_base_url: str = "http://host.docker.internal:11434"
     ollama_model: str = "llama3.2"
+
+    # Step 13: Google Sign-In. Verifying a Firebase ID token only needs the
+    # project ID (as the expected audience) — no service account JSON.
+    firebase_project_id: str = ""
+
+    # Base URL the browser can reach the backend at, used to build absolute
+    # URLs for locally-stored uploads (avatars) that get embedded in
+    # UserProfile responses and rendered directly in <img> tags. Distinct
+    # from database_url/redis_url's container-network addressing — this one
+    # has to resolve from the user's browser, not from inside Docker.
+    backend_public_url: str = "http://localhost:8000"
 
     @property
     def cors_origins_list(self) -> list[str]:

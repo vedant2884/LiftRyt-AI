@@ -1,25 +1,27 @@
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
-import { signup } from "../api/auth";
-import { useAuthBackgroundStyle } from "../lib/authBackground";
+import { googleCompleteProfile } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { FormField, inputClass } from "../components/FormField";
-import GoogleSignInButton from "../components/GoogleSignInButton";
-import type { GoogleAuthResponse } from "../types/auth";
 import type { ActivityLevel, DietaryPreference, ExperienceLevel, Sex } from "../types/user";
 
 const selectClass = inputClass;
 
-export default function SignupPage() {
-  const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
-  const backgroundStyle = useAuthBackgroundStyle();
+interface LocationState {
+  google_token: string;
+  email: string;
+  full_name: string;
+  avatar_url: string | null;
+}
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
+export default function GoogleCompleteProfilePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const state = location.state as LocationState | null;
+
   const [username, setUsername] = useState("");
   const [age, setAge] = useState("");
   const [sex, setSex] = useState<Sex>("male");
@@ -33,15 +35,19 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Reaching this page requires a google_token from the /auth/google step —
+  // direct navigation here (bookmark, refresh) has nothing to complete.
+  if (!state?.google_token) {
+    return <Navigate to="/signup" replace />;
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const { access_token, user } = await signup({
-        email,
-        password,
-        full_name: fullName,
+      const { access_token, user } = await googleCompleteProfile({
+        google_token: state!.google_token,
         username,
         age: Number(age),
         sex,
@@ -60,62 +66,27 @@ export default function SignupPage() {
       const detail = isAxiosError<{ detail?: string }>(err)
         ? err.response?.data?.detail
         : undefined;
-      setError(typeof detail === "string" ? detail : "Signup failed");
+      setError(typeof detail === "string" ? detail : "Couldn't finish setting up your account");
     } finally {
       setLoading(false);
     }
   }
 
-  function handleGoogleResult(result: GoogleAuthResponse) {
-    if (result.needs_profile) {
-      navigate("/signup/complete", {
-        state: {
-          google_token: result.google_token,
-          email: result.email,
-          full_name: result.full_name,
-          avatar_url: result.avatar_url,
-        },
-      });
-      return;
-    }
-    if (result.access_token && result.user) {
-      setAuth(result.access_token, result.user);
-      useThemeStore.getState().setTheme(result.user.theme);
-      useThemeStore.getState().setAccentColor(result.user.accent_color);
-      navigate("/dashboard");
-    }
-  }
-
   return (
-    <main
-      className="flex min-h-svh items-center justify-center px-4 py-10 text-ink"
-      style={backgroundStyle}
-    >
+    <main className="flex min-h-svh items-center justify-center bg-bg px-4 py-10 text-ink">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-lg space-y-4 rounded-xl border border-line bg-surface p-8"
       >
-        <h1 className="text-2xl font-semibold">Create your account</h1>
+        <div>
+          <h1 className="text-2xl font-semibold">Almost there, {state.full_name.split(" ")[0]}</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Signed in as {state.email}. Just a few details so the coach can calculate your targets.
+          </p>
+        </div>
         {error && (
           <p className="rounded-md bg-red-500/10 px-3 py-2 text-sm text-red-400">{error}</p>
         )}
-
-        <GoogleSignInButton onResult={handleGoogleResult} onError={setError} />
-        <div className="flex items-center gap-3 text-xs text-ink-muted">
-          <div className="h-px flex-1 bg-line" />
-          or sign up with email
-          <div className="h-px flex-1 bg-line" />
-        </div>
-
-        <FormField label="Full name" htmlFor="full_name">
-          <input
-            id="full_name"
-            required
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className={inputClass}
-          />
-        </FormField>
 
         <FormField label="Username" htmlFor="username">
           <input
@@ -128,32 +99,6 @@ export default function SignupPage() {
             className={inputClass}
           />
         </FormField>
-
-        <div className="grid grid-cols-2 gap-4">
-          <FormField label="Email" htmlFor="email">
-            <input
-              id="email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={inputClass}
-            />
-          </FormField>
-          <FormField label="Password" htmlFor="password">
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
-          </FormField>
-        </div>
 
         <div className="grid grid-cols-3 gap-4">
           <FormField label="Age" htmlFor="age">
@@ -269,14 +214,8 @@ export default function SignupPage() {
           disabled={loading}
           className="w-full rounded-md bg-accent py-2 font-medium text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
         >
-          {loading ? "Creating account..." : "Create account"}
+          {loading ? "Creating account..." : "Finish creating account"}
         </button>
-        <p className="text-center text-sm text-ink-secondary">
-          Already have an account?{" "}
-          <Link to="/login" className="text-accent hover:underline">
-            Log in
-          </Link>
-        </p>
       </form>
     </main>
   );

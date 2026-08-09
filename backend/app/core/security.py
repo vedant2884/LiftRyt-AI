@@ -19,6 +19,13 @@ import jwt
 from app.core.config import settings
 
 ACCESS_TOKEN_TYPE = "access"
+# Short-lived, distinct token type carrying Google-verified identity claims
+# between POST /auth/google (verifies with Google, no account yet) and
+# POST /auth/google/complete (creates the account) — lets the profile-
+# completion step trust the identity without re-hitting Google or the
+# client being able to forge it.
+GOOGLE_SIGNUP_TOKEN_TYPE = "google_signup"
+GOOGLE_SIGNUP_TOKEN_EXPIRE_MINUTES = 15
 
 
 def hash_password(password: str) -> str:
@@ -52,6 +59,31 @@ def decode_access_token(token: str) -> uuid.UUID:
     return uuid.UUID(payload["sub"])
 
 
+def create_google_signup_token(
+    firebase_uid: str, email: str, full_name: str, avatar_url: str | None
+) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "type": GOOGLE_SIGNUP_TOKEN_TYPE,
+        "firebase_uid": firebase_uid,
+        "email": email,
+        "full_name": full_name,
+        "avatar_url": avatar_url,
+        "iat": now,
+        "exp": now + timedelta(minutes=GOOGLE_SIGNUP_TOKEN_EXPIRE_MINUTES),
+    }
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+
+
+def decode_google_signup_token(token: str) -> dict:
+    """Raises jwt.PyJWTError if the token is expired, malformed, or not a
+    google_signup token."""
+    payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+    if payload.get("type") != GOOGLE_SIGNUP_TOKEN_TYPE:
+        raise jwt.InvalidTokenError("not a google_signup token")
+    return payload
+
+
 def generate_refresh_token() -> str:
     return secrets.token_urlsafe(32)
 
@@ -64,3 +96,18 @@ def hash_refresh_token(raw_token: str) -> str:
 
 def refresh_token_expiry() -> datetime:
     return datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
+
+
+RESET_TOKEN_EXPIRE_MINUTES = 60
+
+
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def hash_reset_token(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def reset_token_expiry() -> datetime:
+    return datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)

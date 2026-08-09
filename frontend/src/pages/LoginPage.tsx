@@ -2,13 +2,17 @@ import { type FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isAxiosError } from "axios";
 import { login } from "../api/auth";
+import { useAuthBackgroundStyle } from "../lib/authBackground";
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { FormField, inputClass } from "../components/FormField";
+import GoogleSignInButton from "../components/GoogleSignInButton";
+import type { GoogleAuthResponse } from "../types/auth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const backgroundStyle = useAuthBackgroundStyle();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,8 +38,31 @@ export default function LoginPage() {
     }
   }
 
+  function handleGoogleResult(result: GoogleAuthResponse) {
+    if (result.needs_profile) {
+      navigate("/signup/complete", {
+        state: {
+          google_token: result.google_token,
+          email: result.email,
+          full_name: result.full_name,
+          avatar_url: result.avatar_url,
+        },
+      });
+      return;
+    }
+    if (result.access_token && result.user) {
+      setAuth(result.access_token, result.user);
+      useThemeStore.getState().setTheme(result.user.theme);
+      useThemeStore.getState().setAccentColor(result.user.accent_color);
+      navigate("/dashboard");
+    }
+  }
+
   return (
-    <main className="flex min-h-svh items-center justify-center bg-bg px-4 text-ink">
+    <main
+      className="flex min-h-svh items-center justify-center px-4 text-ink"
+      style={backgroundStyle}
+    >
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-line bg-surface p-8"
@@ -66,13 +93,26 @@ export default function LoginPage() {
             className={inputClass}
           />
         </FormField>
+        <div className="-mt-2 text-right">
+          <Link to="/forgot-password" className="text-xs text-ink-secondary hover:text-accent hover:underline">
+            Forgot password?
+          </Link>
+        </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-md bg-accent py-2 font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          className="w-full rounded-md bg-accent py-2 font-medium text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
         >
           {loading ? "Logging in..." : "Log in"}
         </button>
+
+        <div className="flex items-center gap-3 text-xs text-ink-muted">
+          <div className="h-px flex-1 bg-line" />
+          or
+          <div className="h-px flex-1 bg-line" />
+        </div>
+        <GoogleSignInButton onResult={handleGoogleResult} onError={setError} />
+
         <p className="text-center text-sm text-ink-secondary">
           No account?{" "}
           <Link to="/signup" className="text-accent hover:underline">
