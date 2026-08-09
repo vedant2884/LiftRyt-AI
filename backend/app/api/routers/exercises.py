@@ -110,3 +110,32 @@ async def get_exercise(
     if exercise is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Exercise not found")
     return ExerciseOut.model_validate(exercise)
+
+
+@router.get("/{exercise_id}/alternatives", response_model=list[ExerciseOut])
+async def get_exercise_alternatives(
+    exercise_id: uuid.UUID,
+    limit: int = Query(default=4, ge=1, le=12),
+    db: AsyncSession = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> list[ExerciseOut]:
+    """Swap suggestions for the detail modal: same category, sharing at
+    least one primary muscle, cheapest possible substitution logic rather
+    than anything ML-driven — this is deterministic, explainable data, not
+    a guess."""
+    exercise = await db.get(Exercise, exercise_id)
+    if exercise is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Exercise not found")
+
+    stmt = (
+        select(Exercise)
+        .where(
+            Exercise.id != exercise_id,
+            Exercise.category == exercise.category,
+            Exercise.primary_muscles.overlap(exercise.primary_muscles),
+        )
+        .order_by(Exercise.name)
+        .limit(limit)
+    )
+    results = (await db.scalars(stmt)).all()
+    return [ExerciseOut.model_validate(item) for item in results]

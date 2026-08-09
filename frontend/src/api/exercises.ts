@@ -36,3 +36,13 @@ export async function fetchExercisesSemantic(query: string, limit = 24): Promise
   });
   return res.data;
 }
+
+export async function fetchExercise(id: string): Promise<Exercise> {
+  const res = await api.get<Exercise>(`/exercises/${id}`);
+  return res.data;
+}
+
+export async function fetchExerciseAlternatives(id: string, limit = 4): Promise<Exercise[]> {
+  const res = await api.get<Exercise[]>(`/exercises/${id}/alternatives`, { params: { limit } });
+  return res.data;
+}

@@ -7,17 +7,24 @@ import type { AuthResponse } from "./types/auth";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import GoogleCompleteProfilePage from "./pages/GoogleCompleteProfilePage";
+import OnboardingPage from "./pages/OnboardingPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
-import ExercisesPage from "./pages/ExercisesPage";
+import ExerciseLibraryPage from "./pages/library/ExerciseLibraryPage";
+import FavoriteExercisesPage from "./pages/library/FavoriteExercisesPage";
+import CustomExercisesPage from "./pages/library/CustomExercisesPage";
+import AiRecommendationsPage from "./pages/library/AiRecommendationsPage";
 import WeightPage from "./pages/WeightPage";
-import WorkoutsPage from "./pages/WorkoutsPage";
-import WorkoutDetailPage from "./pages/WorkoutDetailPage";
 import MacroCalculatorPage from "./pages/MacroCalculatorPage";
 import SplitGeneratorPage from "./pages/SplitGeneratorPage";
 import CoachPage from "./pages/CoachPage";
-import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import LibraryLayout from "./components/LibraryLayout";
+import Toaster from "./components/Toaster";
 
 function App() {
   const setAuth = useAuthStore((s) => s.setAuth);
@@ -49,21 +56,29 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/signup/complete" element={<GoogleCompleteProfilePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/weight" element={<WeightPage />} />
-            <Route path="/workouts" element={<WorkoutsPage />} />
-            <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
-            <Route path="/exercises" element={<ExercisesPage />} />
+            <Route path="/library" element={<LibraryLayout />}>
+              <Route index element={<ExerciseLibraryPage />} />
+              <Route path="favorites" element={<FavoriteExercisesPage />} />
+              <Route path="custom" element={<CustomExercisesPage />} />
+              <Route path="recommendations" element={<AiRecommendationsPage />} />
+            </Route>
             <Route path="/macros" element={<MacroCalculatorPage />} />
             <Route path="/splits" element={<SplitGeneratorPage />} />
             <Route path="/coach" element={<CoachPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Route>
         </Route>
       </Routes>

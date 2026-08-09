@@ -75,3 +75,24 @@ class MacroGoal(str, Enum):
     CUT = "cut"
     MAINTAIN = "maintain"
     BULK = "bulk"
+
+
+class PreviewMediaType(str, Enum):
+    """How to render an exercise's hover/hero preview — determines whether
+    the media component mounts an <img> (gif) or a <video> (mp4/webm)."""
+
+    GIF = "gif"
+    MP4 = "mp4"
+    WEBM = "webm"
+
+
+class TrainingGoal(str, Enum):
+    """Distinct from MacroGoal (cut/maintain/bulk) — that's a nutrition goal
+    and doesn't meaningfully change workout structure (you can build muscle
+    in a surplus or a deficit). This is what actually drives sets/reps and
+    exercise selection: strength favors low reps and compound movements,
+    hypertrophy favors moderate reps and more isolation volume."""
+
+    STRENGTH = "strength"
+    HYPERTROPHY = "hypertrophy"
+    GENERAL_FITNESS = "general_fitness"

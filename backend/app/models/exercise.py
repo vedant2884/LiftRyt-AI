@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base, CreatedAtMixin, UUIDPkMixin
-from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType
+from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType, PreviewMediaType
 
 EMBEDDING_DIM = 384  # all-MiniLM-L6-v2's output dimension
 
@@ -43,3 +43,28 @@ class Exercise(Base, UUIDPkMixin, CreatedAtMixin):
     # pipeline to populate and query it — nullable because it's backfilled
     # after insert (see app/db/embed_exercises.py), not set at creation time.
     embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBEDDING_DIM), nullable=True)
+
+    # --- Visual library: media -------------------------------------------
+    # All nullable — no real photography/video pipeline exists yet. The
+    # frontend's ExerciseMedia component renders a designed placeholder
+    # (gradient + icon, derived from category/muscle) whenever these are
+    # null, so an empty column never means a broken image.
+    thumbnail_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    preview_media_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    preview_media_type: Mapped[PreviewMediaType | None] = mapped_column(
+        SQLEnum(PreviewMediaType, name="exercise_preview_media_type_enum"), nullable=True
+    )
+
+    # --- Visual library: detail modal content -----------------------------
+    # All nullable — the detail modal hides each section when its field is
+    # empty rather than requiring every exercise to be fully authored.
+    instructions: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    common_mistakes: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    breathing_tips: Mapped[str | None] = mapped_column(Text, nullable=True)
+    range_of_motion: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tempo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recommended_sets: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recommended_reps: Mapped[str | None] = mapped_column(Text, nullable=True)
+    beginner_tips: Mapped[str | None] = mapped_column(Text, nullable=True)
+    advanced_tips: Mapped[str | None] = mapped_column(Text, nullable=True)
+    safety_notes: Mapped[str | None] = mapped_column(Text, nullable=True)

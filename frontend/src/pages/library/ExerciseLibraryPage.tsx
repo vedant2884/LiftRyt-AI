@@ -1,12 +1,20 @@
 import { useEffect, useState } from "react";
+import { SearchX } from "lucide-react";
+import { createChatSession } from "../../api/chat";
 import {
   fetchEquipmentOptions,
   fetchExercises,
   fetchExercisesSemantic,
   fetchMuscleOptions,
-} from "../api/exercises";
-import { useDebouncedValue } from "../hooks/useDebouncedValue";
-import type { Exercise } from "../types/exercise";
+} from "../../api/exercises";
+import { addFavorite, fetchFavorites, removeFavorite } from "../../api/favorites";
+import { EmptyState } from "../../components/EmptyState";
+import ExerciseCard from "../../components/library/ExerciseCard";
+import { ExerciseDetailModalRoot } from "../../components/library/ExerciseDetailModal";
+import { Skeleton } from "../../components/Skeleton";
+import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { toast } from "../../store/toastStore";
+import type { Exercise } from "../../types/exercise";
 
 const PAGE_SIZE = 24;
 
@@ -19,15 +27,7 @@ type SearchMode = "keyword" | "semantic";
 const selectClass =
   "rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-40";
 
-const difficultyColor: Record<string, string> = {
-  beginner: "bg-emerald-500/15 text-emerald-400",
-  intermediate: "bg-amber-500/15 text-amber-400",
-  advanced: "bg-red-500/15 text-red-400",
-};
-
-const humanize = (s: string) => s.replace(/_/g, " ");
-
-export default function ExercisesPage() {
+export default function ExerciseLibraryPage() {
   const [mode, setMode] = useState<SearchMode>("keyword");
   const [q, setQ] = useState("");
   const debouncedQ = useDebouncedValue(q, 300);
@@ -43,11 +43,35 @@ export default function ExercisesPage() {
   const [items, setItems] = useState<Exercise[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [openExercise, setOpenExercise] = useState<Exercise | null>(null);
+
+  // exercise_id -> favorite row id, so a heart click knows whether to add
+  // or remove and which favorite row to delete.
+  const [favoriteMap, setFavoriteMap] = useState<Map<string, string>>(new Map());
+
+  // Lazily created and reused across every "Ask Coach" question asked from
+  // any exercise's detail modal during this page visit, so they land in one
+  // real Coach session instead of littering a new thread per question.
+  const [coachSessionId, setCoachSessionId] = useState<string | null>(null);
+
+  function clearFilters() {
+    setQ("");
+    setMuscle("");
+    setEquipment("");
+    setCategory("");
+    setMovementType("");
+    setDifficulty("");
+  }
 
   useEffect(() => {
     fetchMuscleOptions().then(setMuscleOptions);
     fetchEquipmentOptions().then(setEquipmentOptions);
+    fetchFavorites().then((favorites) => {
+      setFavoriteMap(
+        new Map(favorites.filter((f) => f.exercise_id).map((f) => [f.exercise_id as string, f.id])),
+      );
+    });
   }, []);
 
   // Semantic mode: only the query matters (the endpoint doesn't take
@@ -66,6 +90,7 @@ export default function ExercisesPage() {
       setItems(results);
       setTotal(results.length);
       setLoading(false);
+      setInitialLoad(false);
     });
     return () => {
       cancelled = true;
@@ -91,6 +116,7 @@ export default function ExercisesPage() {
       setItems(res.items);
       setTotal(res.total);
       setLoading(false);
+      setInitialLoad(false);
     });
     return () => {
       cancelled = true;
@@ -113,13 +139,35 @@ export default function ExercisesPage() {
     setLoading(false);
   }
 
+  async function toggleFavorite(exerciseId: string) {
+    const existingFavoriteId = favoriteMap.get(exerciseId);
+    if (existingFavoriteId) {
+      await removeFavorite(existingFavoriteId);
+      setFavoriteMap((prev) => {
+        const next = new Map(prev);
+        next.delete(exerciseId);
+        return next;
+      });
+    } else {
+      const favorite = await addFavorite({ exercise_id: exerciseId });
+      setFavoriteMap((prev) => new Map(prev).set(exerciseId, favorite.id));
+      toast.success("Added to favorites");
+    }
+  }
+
+  async function ensureCoachSession(): Promise<string> {
+    if (coachSessionId) return coachSessionId;
+    const session = await createChatSession();
+    setCoachSessionId(session.id);
+    return session.id;
+  }
+
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
-      <h1 className="mb-1 text-2xl font-semibold">Exercise Library</h1>
+    <div>
       <p className="mb-6 text-sm text-ink-muted">
         {mode === "keyword"
-          ? "Keyword search — matches text in the name or description."
-          : "Semantic search — finds exercises by meaning (pgvector + sentence embeddings), even when your words don't literally appear anywhere."}
+          ? "Keyword search. Matches text in the name or description."
+          : "Semantic search. Finds exercises by meaning, even when your words don't literally appear anywhere."}
       </p>
 
       <div className="mb-4 inline-flex rounded-lg border border-line bg-surface p-1">
@@ -224,62 +272,65 @@ export default function ExercisesPage() {
           : `${total} exercise${total === 1 ? "" : "s"}`}
       </p>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((ex) => {
-          const isExpanded = expandedId === ex.id;
-          return (
-            <button
-              key={ex.id}
-              onClick={() => setExpandedId(isExpanded ? null : ex.id)}
-              className={`rounded-xl border p-4 text-left transition ${
-                isExpanded
-                  ? "col-span-full border-accent bg-surface"
-                  : "border-line bg-surface hover:border-line-strong"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <h2 className="font-medium">{ex.name}</h2>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs ${difficultyColor[ex.difficulty]}`}
-                >
-                  {ex.difficulty}
-                </span>
+      {loading && items.length === 0 && (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="overflow-hidden rounded-2xl border border-line bg-surface">
+              <div className="aspect-[4/3] w-full animate-pulse bg-surface-hover" />
+              <div className="p-3.5">
+                <Skeleton className="h-3.5 w-4/5" />
+                <Skeleton className="mt-2 h-3 w-1/2" />
               </div>
-              <p className="mt-1 text-xs capitalize text-ink-muted">
-                {ex.category.replace("_", " ")} &middot; {ex.equipment.replace("_", " ")} &middot;{" "}
-                {ex.movement_type}
-              </p>
-              <p className="mt-2 text-xs text-ink-secondary">
-                {ex.primary_muscles.map(humanize).join(", ")}
-                {ex.secondary_muscles.length > 0 && (
-                  <span className="text-ink-muted">
-                    {" "}
-                    + {ex.secondary_muscles.map(humanize).join(", ")}
-                  </span>
-                )}
-              </p>
-              {isExpanded && ex.description && (
-                <p className="mt-3 border-t border-line pt-3 text-sm text-ink">
-                  {ex.description}
-                </p>
-              )}
-            </button>
-          );
-        })}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && !initialLoad && items.length === 0 && (mode === "keyword" || debouncedQ.trim()) && (
+        <EmptyState
+          icon={SearchX}
+          message="No exercises match your filters."
+          actionLabel="Clear filters"
+          onAction={clearFilters}
+        />
+      )}
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {(!loading || items.length > 0) &&
+          items.map((ex) => (
+            <ExerciseCard
+              key={ex.id}
+              exercise={ex}
+              isFavorited={favoriteMap.has(ex.id)}
+              onToggleFavorite={toggleFavorite}
+              onOpen={setOpenExercise}
+            />
+          ))}
       </div>
 
-      {loading && <p className="mt-6 text-center text-sm text-ink-muted">Loading...</p>}
+      {loading && items.length > 0 && (
+        <p className="mt-6 text-center text-sm text-ink-muted">Loading more...</p>
+      )}
 
       {!loading && mode === "keyword" && items.length < total && (
         <div className="mt-6 flex justify-center">
           <button
             onClick={loadMore}
-            className="rounded-md border border-line-strong px-4 py-2 text-sm transition hover:bg-surface-hover"
+            className="rounded-md border border-line-strong px-4 py-2 text-sm transition hover:bg-surface-hover active:scale-[0.97]"
           >
             Load more
           </button>
         </div>
       )}
-    </main>
+
+      <ExerciseDetailModalRoot
+        exercise={openExercise}
+        isFavorited={openExercise ? favoriteMap.has(openExercise.id) : false}
+        onToggleFavorite={toggleFavorite}
+        onClose={() => setOpenExercise(null)}
+        onSelectAlternative={setOpenExercise}
+        ensureCoachSession={ensureCoachSession}
+      />
+    </div>
   );
 }
