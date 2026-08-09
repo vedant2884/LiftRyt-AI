@@ -11,16 +11,20 @@ import {
   Send,
   Share2,
   ShieldAlert,
+  TrendingUp,
   Timer,
   Wind,
   X,
 } from "lucide-react";
 import { fetchExerciseAlternatives } from "../../api/exercises";
 import { sendChatMessage } from "../../api/chat";
+import { fetchProgressions, updateProgression } from "../../api/progressions";
 import { describeChatError } from "../../lib/chatErrors";
+import { toast } from "../../store/toastStore";
 import ExerciseMedia from "./ExerciseMedia";
 import MarkdownMessage from "../MarkdownMessage";
 import type { Exercise } from "../../types/exercise";
+import { INCREMENT_PRESETS_KG, type ExerciseProgression } from "../../types/progression";
 
 const humanize = (s: string) => s.replace(/_/g, " ");
 
@@ -77,6 +81,8 @@ export default function ExerciseDetailModal({
   const [askInput, setAskInput] = useState("");
   const [asking, setAsking] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
+  const [progression, setProgression] = useState<ExerciseProgression | null>(null);
+  const [savingProgression, setSavingProgression] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -98,13 +104,31 @@ export default function ExerciseDetailModal({
     setAlternatives([]);
     setThread([]);
     setAskError(null);
+    setProgression(null);
     fetchExerciseAlternatives(exercise.id).then((results) => {
       if (!cancelled) setAlternatives(results);
+    });
+    fetchProgressions().then((rows) => {
+      if (!cancelled) setProgression(rows.find((r) => r.exercise_id === exercise.id) ?? null);
     });
     return () => {
       cancelled = true;
     };
   }, [exercise.id]);
+
+  async function handleProgressionUpdate(
+    patch: { increment_kg?: number | null; enabled?: boolean; clear_suggestion?: boolean },
+  ) {
+    setSavingProgression(true);
+    try {
+      const updated = await updateProgression({ exercise_id: exercise.id, ...patch });
+      setProgression(updated);
+    } catch {
+      toast.error("Couldn't save that. Please try again.");
+    } finally {
+      setSavingProgression(false);
+    }
+  }
 
   const quickFacts = useMemo(
     () =>
@@ -380,6 +404,71 @@ export default function ExerciseDetailModal({
             <p className="mt-2 text-center text-[11px] text-ink-muted">
               LiftRyt AI can make mistakes. Check important info before relying on it.
             </p>
+          </Section>
+
+          <Section title="Progressive overload" icon={TrendingUp}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm text-ink">
+                  {progression?.increment_kg_override != null
+                    ? `Custom increment: +${progression.increment_kg_override} kg`
+                    : `Using your default: +${progression?.increment_kg ?? "…"} kg`}
+                </p>
+                {progression?.next_suggested_weight_kg != null && (
+                  <p className="mt-0.5 text-xs text-accent">
+                    Pending suggestion: {progression.next_suggested_weight_kg} kg next time
+                  </p>
+                )}
+              </div>
+              <label className="flex shrink-0 items-center gap-1.5 text-xs text-ink-secondary">
+                <input
+                  type="checkbox"
+                  checked={progression?.enabled ?? true}
+                  onChange={(e) => handleProgressionUpdate({ enabled: e.target.checked })}
+                  disabled={savingProgression}
+                  className="h-3.5 w-3.5 rounded border-line-strong accent-accent"
+                />
+                Enabled
+              </label>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                disabled={savingProgression}
+                onClick={() => handleProgressionUpdate({ increment_kg: null })}
+                className={`rounded-full border px-2.5 py-1 text-xs transition disabled:opacity-50 ${
+                  progression?.increment_kg_override == null
+                    ? "border-accent bg-accent/10 text-accent"
+                    : "border-line-strong text-ink-secondary hover:border-ink-muted"
+                }`}
+              >
+                Default
+              </button>
+              {INCREMENT_PRESETS_KG.map((kg) => (
+                <button
+                  key={kg}
+                  type="button"
+                  disabled={savingProgression}
+                  onClick={() => handleProgressionUpdate({ increment_kg: kg })}
+                  className={`rounded-full border px-2.5 py-1 text-xs transition disabled:opacity-50 ${
+                    progression?.increment_kg_override === kg
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-line-strong text-ink-secondary hover:border-ink-muted"
+                  }`}
+                >
+                  +{kg} kg
+                </button>
+              ))}
+            </div>
+            {progression?.next_suggested_weight_kg != null && (
+              <button
+                type="button"
+                onClick={() => handleProgressionUpdate({ clear_suggestion: true })}
+                className="mt-2 text-xs text-ink-muted underline hover:text-ink"
+              >
+                Clear pending suggestion
+              </button>
+            )}
           </Section>
 
           <div className="flex items-center justify-between border-t border-line pt-5">

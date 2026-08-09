@@ -38,6 +38,7 @@ class UserProfile(BaseModel):
     unit_length: LengthUnit
     theme: ThemeMode
     accent_color: AccentColor
+    default_progression_increment_kg: float
     created_at: datetime
 
 
@@ -59,3 +60,4 @@ class UserProfileUpdate(BaseModel):
     unit_length: LengthUnit | None = None
     theme: ThemeMode | None = None
     accent_color: AccentColor | None = None
+    default_progression_increment_kg: float | None = Field(default=None, gt=0, le=50)

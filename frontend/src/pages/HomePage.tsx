@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import type { ReactNode } from "react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  MessageCircle,
+  PieChart,
+  Search,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
 import { useAuthStore } from "../store/authStore";
 
 const fadeUp = {
@@ -18,67 +26,50 @@ const CTA_LABEL = "Get started free";
 interface Feature {
   title: string;
   description: string;
-  icon: ReactNode;
+  icon: LucideIcon;
 }
 
+// Real lucide-react icons, not hand-drawn SVG paths — this grid predates
+// the rest of the app standardizing on lucide (see AppLayout/AccountMenu/
+// Library), which is why it used to look visually inconsistent with
+// everything else (mismatched stroke width/linecap per icon, no shared
+// sizing). Rendered uniformly below instead.
 const FEATURES: Feature[] = [
   {
     title: "AI Gym Coach",
     description:
       "A chat coach that checks your real weight trend and macro targets before it answers, and uses real tools instead of guessing.",
-    icon: (
-      <path
-        d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
-        strokeWidth="1.5"
-      />
-    ),
+    icon: MessageCircle,
   },
   {
     title: "Weight Trend Analytics",
     description:
       "Log your weight and see 7-day and 30-day trends, plus a projected date for hitting your goal weight, based on your actual logged history, not a guess.",
-    icon: <path d="M3 17 9 11l4 4 8-8M15 6h6v6" strokeWidth="1.5" />,
+    icon: TrendingUp,
   },
   {
     title: "Weekly Check-Ins",
     description:
       "On demand, the coach reviews your recent trend and macro adherence and writes a short, honest check-in, not a generic pep talk.",
-    icon: (
-      <path
-        d="M6 8v8M18 8v8M2 12h2M20 12h2M6 12h12"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    ),
+    icon: CalendarCheck,
   },
   {
     title: "Rule-Based Split Generator",
     description:
       "Give it your days per week, experience, and goal, and get a real structured split with a stated reason for every exercise, not an AI freehanding it.",
-    icon: (
-      <path
-        d="M4 4h16v16H4z M4 10h16 M10 10v10"
-        strokeWidth="1.5"
-      />
-    ),
+    icon: CalendarDays,
   },
   {
     title: "Macro & Calorie Targets",
     description:
       "A calorie and macro split tuned to your goal and bodyweight using a trusted, established formula, saved once and referenced everywhere.",
-    icon: <path d="M12 2v10l7 7A10 10 0 1 0 12 2Z" strokeWidth="1.5" />,
+    icon: PieChart,
   },
   {
     title: "Exercise Library + Smart Search",
     description:
       "Browse by muscle, equipment, and difficulty, or just describe what you need in plain words and get relevant exercises back, even if you don't know the exact name.",
-    icon: (
-      <path
-        d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM21 21l-4.35-4.35"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    ),
+    icon: Search,
   },
 ];
 
@@ -239,14 +230,9 @@ export default function HomePage() {
               whileHover={{ y: -4 }}
               className="rounded-xl border border-line bg-surface p-6"
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                className="mb-4 h-8 w-8 text-accent"
-              >
-                {f.icon}
-              </svg>
+              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                <f.icon size={20} strokeWidth={1.75} className="text-accent" />
+              </div>
               <h3 className="mb-2 font-medium">{f.title}</h3>
               <p className="text-sm text-ink-secondary">{f.description}</p>
             </motion.div>

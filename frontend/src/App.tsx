@@ -12,6 +12,10 @@ import OnboardingPage from "./pages/OnboardingPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
+import WorkoutsPage from "./pages/WorkoutsPage";
+import WorkoutAnalysisPage from "./pages/WorkoutAnalysisPage";
+import ActiveWorkoutPage from "./pages/ActiveWorkoutPage";
+import WorkoutDetailPage from "./pages/WorkoutDetailPage";
 import ExerciseLibraryPage from "./pages/library/ExerciseLibraryPage";
 import FavoriteExercisesPage from "./pages/library/FavoriteExercisesPage";
 import CustomExercisesPage from "./pages/library/CustomExercisesPage";
@@ -23,6 +27,7 @@ import CoachPage from "./pages/CoachPage";
 import ProfilePage from "./pages/ProfilePage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
+import WorkoutsLayout from "./components/WorkoutsLayout";
 import LibraryLayout from "./components/LibraryLayout";
 import Toaster from "./components/Toaster";
 
@@ -68,6 +73,12 @@ function App() {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/workouts" element={<WorkoutsLayout />}>
+              <Route index element={<WorkoutsPage />} />
+              <Route path="analysis" element={<WorkoutAnalysisPage />} />
+            </Route>
+            <Route path="/workouts/active" element={<ActiveWorkoutPage />} />
+            <Route path="/workouts/:id" element={<WorkoutDetailPage />} />
             <Route path="/weight" element={<WeightPage />} />
             <Route path="/library" element={<LibraryLayout />}>
               <Route index element={<ExerciseLibraryPage />} />

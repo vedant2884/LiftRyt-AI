@@ -19,3 +19,7 @@ class Workout(Base, UUIDPkMixin, CreatedAtMixin, UpdatedAtMixin):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     notes: Mapped[str | None] = mapped_column(Text)
+    # Set once, at Finish Workout — null for a workout still being logged
+    # (moot in practice since a Workout row itself isn't created until the
+    # first set completes, see add_set) or one that predates this column.
+    duration_seconds: Mapped[int | None] = mapped_column()

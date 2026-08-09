@@ -27,4 +27,17 @@ export interface SplitPlan {
   goal: TrainingGoal;
   days: SplitDay[];
   completed_day_numbers: number[];
+  next_day_number: number;
+}
+
+/** Lean shape for browsing saved splits (GET /splits) — no plan/exercise
+ * payload, just enough to pick one to activate. */
+export interface SplitSummary {
+  id: string;
+  split_type: string;
+  days_per_week: number;
+  experience_level: ExperienceLevel;
+  goal: TrainingGoal;
+  is_active: boolean;
+  created_at: string;
 }

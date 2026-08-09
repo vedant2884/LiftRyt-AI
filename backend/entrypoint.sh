@@ -17,7 +17,7 @@ export HF_HUB_OFFLINE=1
 # meaningful in dev, pure overhead (and an extra reloader process to
 # manage) in a deployed container with no bind mount to watch.
 if [ "$ENVIRONMENT" = "production" ]; then
-  exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+    exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
 else
-  exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}" --reload
 fi

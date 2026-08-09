@@ -1,5 +1,5 @@
 import { api } from "../lib/api";
-import type { SplitPlan, TrainingGoal } from "../types/split";
+import type { SplitPlan, SplitSummary, TrainingGoal } from "../types/split";
 import type { ExperienceLevel } from "../types/user";
 
 export async function generateSplit(
@@ -27,5 +27,15 @@ export interface DayCompletion {
 
 export async function toggleDayComplete(splitId: string, dayIndex: number): Promise<DayCompletion> {
   const res = await api.post<DayCompletion>(`/splits/${splitId}/days/${dayIndex}/toggle-complete`);
+  return res.data;
+}
+
+export async function listSplits(): Promise<SplitSummary[]> {
+  const res = await api.get<SplitSummary[]>("/splits");
+  return res.data;
+}
+
+export async function activateSplit(splitId: string): Promise<SplitPlan> {
+  const res = await api.post<SplitPlan>(`/splits/${splitId}/activate`);
   return res.data;
 }

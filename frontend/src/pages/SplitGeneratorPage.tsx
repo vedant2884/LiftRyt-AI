@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
-import { fetchActiveSplit, generateSplit, toggleDayComplete } from "../api/splits";
+import { activateSplit, fetchActiveSplit, generateSplit, listSplits, toggleDayComplete } from "../api/splits";
 import { EmptyState } from "../components/EmptyState";
 import { DumbbellIcon } from "../components/icons";
 import { Skeleton } from "../components/Skeleton";
 import SplitExportCard from "../components/SplitExportCard";
 import { useAuthStore } from "../store/authStore";
 import { toast } from "../store/toastStore";
-import type { SplitPlan, TrainingGoal } from "../types/split";
+import type { SplitPlan, SplitSummary, TrainingGoal } from "../types/split";
 import type { ExperienceLevel } from "../types/user";
+
+function formatSplitDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 const GOALS: { value: TrainingGoal; label: string }[] = [
   { value: "strength", label: "Strength" },
@@ -16,8 +20,12 @@ const GOALS: { value: TrainingGoal; label: string }[] = [
   { value: "general_fitness", label: "General fitness" },
 ];
 
+// h-10 pinned explicitly (not just matching padding) — a native <select>'s
+// browser-default chrome can render a couple px taller than a <button>
+// with identical padding, which is what made this row look subtly
+// misaligned despite both using py-2.
 const selectClass =
-  "rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent";
+  "h-10 rounded-md border border-line-strong bg-bg px-3 text-sm outline-none focus:border-accent";
 
 const categoryColor: Record<string, string> = {
   push: "bg-blue-500/15 text-blue-400",
@@ -39,21 +47,48 @@ export default function SplitGeneratorPage() {
   const [togglingDay, setTogglingDay] = useState<number | null>(null);
   const [exporting, setExporting] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
+  const [savedSplits, setSavedSplits] = useState<SplitSummary[]>([]);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchActiveSplit()
       .then(setPlan)
       .finally(() => setInitialLoading(false));
+    refreshSavedSplits();
   }, []);
+
+  function refreshSavedSplits() {
+    listSplits()
+      .then(setSavedSplits)
+      .catch(() => {
+        // The "Your splits" list is a convenience over the primary
+        // generate/view flow above — a failed fetch shouldn't block it.
+      });
+  }
 
   async function handleGenerate() {
     setLoading(true);
     try {
       const result = await generateSplit(daysPerWeek, experienceLevel, goal);
       setPlan(result);
+      refreshSavedSplits();
       toast.success("Split generated");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleActivate(splitId: string) {
+    setActivatingId(splitId);
+    try {
+      const result = await activateSplit(splitId);
+      setPlan(result);
+      refreshSavedSplits();
+      toast.success("Preferred split updated");
+    } catch {
+      toast.error("Couldn't set that as your preferred split. Please try again.");
+    } finally {
+      setActivatingId(null);
     }
   }
 
@@ -152,11 +187,50 @@ export default function SplitGeneratorPage() {
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
+          className="h-10 rounded-md bg-accent px-5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
         >
           {loading ? "Generating..." : plan ? "Generate new split" : "Generate split"}
         </button>
       </div>
+
+      {savedSplits.length > 1 && (
+        <div className="mb-8 rounded-xl border border-line bg-surface p-4">
+          <p className="mb-3 text-sm font-medium">Your splits</p>
+          <div className="space-y-2">
+            {savedSplits.map((s) => (
+              <div
+                key={s.id}
+                className={`flex flex-wrap items-center justify-between gap-2 rounded-md border p-3 ${
+                  s.is_active ? "border-accent/40 bg-accent/5" : "border-line"
+                }`}
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {s.split_type} <span className="text-ink-muted">&middot; {s.days_per_week} days/week</span>
+                  </p>
+                  <p className="text-xs text-ink-muted">
+                    {s.goal.replace("_", " ")} &middot; generated {formatSplitDate(s.created_at)}
+                  </p>
+                </div>
+                {s.is_active ? (
+                  <span className="shrink-0 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+                    Preferred
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleActivate(s.id)}
+                    disabled={activatingId === s.id}
+                    className="shrink-0 rounded-md border border-line-strong px-3 py-1.5 text-xs font-medium transition hover:bg-surface-hover active:scale-[0.97] disabled:opacity-50"
+                  >
+                    {activatingId === s.id ? "Setting..." : "Set as preferred"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {initialLoading && (
         <div className="space-y-4">

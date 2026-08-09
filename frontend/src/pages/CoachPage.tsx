@@ -6,7 +6,7 @@ import {
   requestWeeklyCheckin,
   sendChatMessage,
 } from "../api/chat";
-import { ChatBubbleIcon } from "../components/icons";
+import { DumbbellIcon } from "../components/icons";
 import DumbbellSpinner from "../components/DumbbellSpinner";
 import MarkdownMessage from "../components/MarkdownMessage";
 import { Skeleton } from "../components/Skeleton";
@@ -17,6 +17,12 @@ import type { ChatMessage, ChatSession } from "../types/chat";
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+
+const SUGGESTED_PROMPTS = [
+  "How am I progressing?",
+  "Review my latest workout",
+  "What should I train today?",
+];
 
 function formatSessionDate(iso: string): string {
   const date = new Date(iso);
@@ -152,7 +158,7 @@ export default function CoachPage() {
           ))}
         {!sessionsLoading && sessions.length === 0 && (
           <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
-            <ChatBubbleIcon className="h-5 w-5 text-ink-muted" />
+            <DumbbellIcon className="h-5 w-5 text-ink-muted" />
             <p className="text-xs text-ink-muted">No past conversations yet.</p>
           </div>
         )}
@@ -235,18 +241,43 @@ export default function CoachPage() {
             </div>
           )}
           {!loadingSession && messages.length === 0 && (
-            <div className="flex flex-col items-center gap-3 py-8 text-center">
-              <ChatBubbleIcon className="h-8 w-8 text-ink-muted" />
-              <p className="text-sm text-ink-secondary">
-                Ask about your training, a workout split, or your macros to get started.
-              </p>
+            <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-10 text-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1">
+                  <DumbbellIcon className="h-3 w-3 text-accent" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">
+                    Your Coach
+                  </span>
+                </div>
+                <h2 className="text-xl font-semibold text-ink">Your training, your data, your coach.</h2>
+                <p className="text-sm text-ink-muted">
+                  Ask about your workouts, progress, macros, or next session.
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={() => inputRef.current?.focus()}
-                className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+                className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
               >
-                Start typing
+                Start a conversation
               </button>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => {
+                      setInput(prompt);
+                      inputRef.current?.focus();
+                    }}
+                    className="rounded-full border border-line-strong px-3 py-1.5 text-xs text-ink-secondary transition hover:border-accent/50 hover:text-ink"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {!loadingSession &&

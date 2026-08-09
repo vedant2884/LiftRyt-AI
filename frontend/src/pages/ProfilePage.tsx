@@ -1,12 +1,13 @@
 import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
-import { changePassword, deleteAccount, updateProfile, uploadAvatarFile } from "../api/auth";
+import { changePassword, deleteAccount, updateProfile, uploadAvatarFile, type ProfileUpdatePayload } from "../api/auth";
 import { initials, resolveAvatarUrl } from "../lib/avatar";
 import { toast } from "../store/toastStore";
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { FormField, inputClass } from "../components/FormField";
+import { INCREMENT_PRESETS_KG } from "../types/progression";
 import type { AccentColor, LengthUnit, ThemeMode, WeightUnit } from "../types/user";
 
 const ACCENTS: { value: AccentColor; label: string; swatch: string }[] = [
@@ -25,6 +26,9 @@ export default function ProfilePage() {
 
   const [unitWeight, setUnitWeight] = useState<WeightUnit>(user?.unit_weight ?? "kg");
   const [unitLength, setUnitLength] = useState<LengthUnit>(user?.unit_length ?? "cm");
+  const [increment, setIncrement] = useState(user?.default_progression_increment_kg ?? 2.5);
+  const [customIncrementInput, setCustomIncrementInput] = useState("");
+  const isCustomIncrement = !(INCREMENT_PRESETS_KG as readonly number[]).includes(increment);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -59,7 +63,7 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
-  async function persist(changes: Partial<Record<string, string>>) {
+  async function persist(changes: ProfileUpdatePayload) {
     setSaving(true);
     setSaved(false);
     try {
@@ -187,6 +191,23 @@ export default function ProfilePage() {
   function handleUnitLengthChange(unit: LengthUnit) {
     setUnitLength(unit);
     persist({ unit_length: unit });
+  }
+
+  function handleIncrementSelectChange(value: string) {
+    if (value === "custom") {
+      setCustomIncrementInput(String(increment));
+      return;
+    }
+    const num = Number(value);
+    setIncrement(num);
+    persist({ default_progression_increment_kg: num });
+  }
+
+  function handleCustomIncrementSubmit() {
+    const num = Number(customIncrementInput);
+    if (!num || num <= 0) return;
+    setIncrement(num);
+    persist({ default_progression_increment_kg: num });
   }
 
   return (
@@ -431,6 +452,50 @@ export default function ProfilePage() {
                 ))}
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-line bg-surface p-5">
+          <h2 className="mb-1 font-medium">Progressive overload</h2>
+          <p className="mb-4 text-sm text-ink-muted">
+            After a PR, the coach offers to suggest this weight bump for next time — always your call to
+            confirm, per exercise. This is just the default; override it per exercise from its Library
+            detail page.
+          </p>
+          <p className="mb-2 text-xs text-ink-secondary">Default weight increase</p>
+          <div className="flex items-center gap-2">
+            <select
+              value={isCustomIncrement ? "custom" : String(increment)}
+              onChange={(e) => handleIncrementSelectChange(e.target.value)}
+              className={`${inputClass} w-32`}
+            >
+              {INCREMENT_PRESETS_KG.map((kg) => (
+                <option key={kg} value={kg}>
+                  {kg} kg
+                </option>
+              ))}
+              <option value="custom">Custom</option>
+            </select>
+            {isCustomIncrement && (
+              <>
+                <input
+                  type="number"
+                  step="0.25"
+                  min="0.25"
+                  value={customIncrementInput}
+                  onChange={(e) => setCustomIncrementInput(e.target.value)}
+                  placeholder="kg"
+                  className={`${inputClass} w-24`}
+                />
+                <button
+                  type="button"
+                  onClick={handleCustomIncrementSubmit}
+                  className="rounded-md bg-accent px-3 py-2 text-xs font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+                >
+                  Save
+                </button>
+              </>
+            )}
           </div>
         </section>
 

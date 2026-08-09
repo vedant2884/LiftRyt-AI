@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
-import { CalendarDays, LayoutDashboard, Library, Menu, MessageCircle, PieChart, Scale, X } from "lucide-react";
+import {
+  CalendarDays,
+  Dumbbell,
+  LayoutDashboard,
+  Library,
+  Menu,
+  MessageCircle,
+  PieChart,
+  Scale,
+  X,
+} from "lucide-react";
 import AccountMenu from "./AccountMenu";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
@@ -16,6 +26,7 @@ const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
 
 const NAV_LINKS = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/workouts", label: "Workouts", icon: Dumbbell },
   { to: "/coach", label: "Coach", icon: MessageCircle },
   { to: "/weight", label: "Weight", icon: Scale },
   { to: "/library", label: "Library", icon: Library },

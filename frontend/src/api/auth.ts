@@ -27,6 +27,7 @@ export interface ProfileUpdatePayload {
   unit_length?: LengthUnit;
   theme?: ThemeMode;
   accent_color?: AccentColor;
+  default_progression_increment_kg?: number;
 }
 
 export interface SignupPayload {
@@ -49,8 +50,16 @@ export async function signup(payload: SignupPayload): Promise<AuthResponse> {
   return res.data;
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const res = await api.post<AuthResponse>("/auth/login", { email, password });
+export async function login(
+  email: string,
+  password: string,
+  rememberMe = true,
+): Promise<AuthResponse> {
+  const res = await api.post<AuthResponse>("/auth/login", {
+    email,
+    password,
+    remember_me: rememberMe,
+  });
   return res.data;
 }
 

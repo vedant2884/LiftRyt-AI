@@ -11,7 +11,7 @@ thing regardless of how it was created.
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import desc, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.custom_exercise import CustomExercise
@@ -86,6 +86,54 @@ async def get_active_split(db: AsyncSession, user_id: uuid.UUID) -> GeneratedSpl
     return await db.scalar(
         select(GeneratedSplit).where(GeneratedSplit.user_id == user_id, GeneratedSplit.is_active.is_(True))
     )
+
+
+async def list_splits(db: AsyncSession, user_id: uuid.UUID) -> list[GeneratedSplit]:
+    """Every split the user has ever generated, not just the active one —
+    generating a new split has always deactivated the previous one, but
+    nothing before this let you see or return to it. Newest first."""
+    rows = await db.scalars(
+        select(GeneratedSplit)
+        .where(GeneratedSplit.user_id == user_id)
+        .order_by(GeneratedSplit.created_at.desc())
+    )
+    return list(rows.all())
+
+
+async def activate_split(db: AsyncSession, user_id: uuid.UUID, split_id: uuid.UUID) -> GeneratedSplit:
+    """Marks split_id as the user's preferred/active split. Same deactivate-
+    then-activate ordering as generate_and_save_split, so the partial
+    unique index never sees two active rows for this user at once."""
+    split = await db.get(GeneratedSplit, split_id)
+    if split is None or split.user_id != user_id:
+        raise ValueError("Split not found")
+
+    await db.execute(
+        update(GeneratedSplit)
+        .where(GeneratedSplit.user_id == user_id, GeneratedSplit.is_active.is_(True))
+        .values(is_active=False)
+    )
+    split.is_active = True
+    await db.commit()
+    await db.refresh(split)
+    return split
+
+
+async def get_next_day_number(db: AsyncSession, split: GeneratedSplit) -> int:
+    """Which day of the split's rotation is "today's" — the day after the
+    most recently completed one (wrapping back to day 1 past the last day),
+    or day 1 if nothing has ever been completed. Deliberately not tied to
+    calendar weekdays: the split itself isn't either (just "N days/week"),
+    so rotation position is the only thing that's actually well-defined."""
+    last_completed = await db.scalar(
+        select(SplitDayCompletion.day_index)
+        .where(SplitDayCompletion.split_id == split.id)
+        .order_by(desc(SplitDayCompletion.completed_at))
+        .limit(1)
+    )
+    if last_completed is None:
+        return 1
+    return (last_completed % split.days_per_week) + 1
 
 
 async def toggle_day_completion(

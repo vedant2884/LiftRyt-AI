@@ -27,5 +27,6 @@ export interface UserProfile {
   unit_length: LengthUnit;
   theme: ThemeMode;
   accent_color: AccentColor;
+  default_progression_increment_kg: number;
   created_at: string;
 }

@@ -60,13 +60,16 @@ REFRESH_COOKIE_NAME = "refresh_token"
 REFRESH_COOKIE_PATH = "/auth"
 
 
-async def _issue_refresh_cookie(db: AsyncSession, user_id: uuid.UUID, response: Response) -> None:
+async def _issue_refresh_cookie(
+    db: AsyncSession, user_id: uuid.UUID, response: Response, remember_me: bool = True
+) -> None:
     raw_token = generate_refresh_token()
     db.add(
         RefreshToken(
             user_id=user_id,
             token_hash=hash_refresh_token(raw_token),
             expires_at=refresh_token_expiry(),
+            remember_me=remember_me,
         )
     )
     response.set_cookie(
@@ -75,7 +78,11 @@ async def _issue_refresh_cookie(db: AsyncSession, user_id: uuid.UUID, response: 
         httponly=True,
         secure=settings.cookie_secure,
         samesite=settings.cookie_samesite,
-        max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
+        # Omitting max_age makes this a session cookie — the browser drops
+        # it on a full restart rather than keeping the user signed in. The
+        # server-side token itself still lives for the usual expiry either
+        # way; only the cookie's own persistence changes.
+        max_age=settings.refresh_token_expire_days * 24 * 60 * 60 if remember_me else None,
         path=REFRESH_COOKIE_PATH,
     )
 
@@ -143,7 +150,7 @@ async def login(
     await clear_login_attempts(payload.email)
 
     access_token = create_access_token(user.id)
-    await _issue_refresh_cookie(db, user.id, response)
+    await _issue_refresh_cookie(db, user.id, response, remember_me=payload.remember_me)
     await db.commit()
 
     return AuthResponse(access_token=access_token, user=UserProfile.model_validate(user))
@@ -356,7 +363,11 @@ async def refresh(
     # rotated it) will find its hash already revoked and be rejected.
     stored.revoked_at = now
     access_token = create_access_token(stored.user_id)
-    await _issue_refresh_cookie(db, stored.user_id, response)
+    # Carries the original Remember Me choice forward — without this, an
+    # unchecked (session-only) login would silently become persistent again
+    # on the very first silent refresh, since rotation always issues a new
+    # cookie and the default there is remembered.
+    await _issue_refresh_cookie(db, stored.user_id, response, remember_me=stored.remember_me)
     await db.commit()
 
     # Returning the user (not just the token) lets the frontend repopulate

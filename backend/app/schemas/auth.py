@@ -26,6 +26,10 @@ class SignupRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
+    # True (persistent refresh cookie, survives a browser restart) matches
+    # every other sign-in path's existing behavior — unchecking it is what's
+    # new, not the default itself.
+    remember_me: bool = True
 
 
 class TokenResponse(BaseModel):

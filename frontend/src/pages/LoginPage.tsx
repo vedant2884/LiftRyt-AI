@@ -15,6 +15,7 @@ export default function LoginPage() {
   const backgroundStyle = useAuthBackgroundStyle();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { access_token, user } = await login(email, password);
+      const { access_token, user } = await login(email, password, rememberMe);
       setAuth(access_token, user);
       useThemeStore.getState().setTheme(user.theme);
       useThemeStore.getState().setAccentColor(user.accent_color);
@@ -93,7 +94,16 @@ export default function LoginPage() {
             className={inputClass}
           />
         </FormField>
-        <div className="-mt-2 text-right">
+        <div className="-mt-2 flex items-center justify-between">
+          <label className="flex items-center gap-1.5 text-xs text-ink-secondary">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-line-strong accent-accent"
+            />
+            Remember me on this device
+          </label>
           <Link to="/forgot-password" className="text-xs text-ink-secondary hover:text-accent hover:underline">
             Forgot password?
           </Link>

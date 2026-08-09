@@ -14,6 +14,7 @@ from app.schemas.split import (
     SplitExerciseOut,
     SplitGenerateRequest,
     SplitPlanOut,
+    SplitSummaryOut,
 )
 from app.services import split_service
 from app.services.streaks_service import start_of_week
@@ -24,6 +25,7 @@ router = APIRouter(prefix="/splits", tags=["splits"])
 async def _to_plan_out(db: AsyncSession, split: GeneratedSplit) -> SplitPlanOut:
     week_start = start_of_week(datetime.now(timezone.utc))
     completed = await split_service.get_completed_day_indices_since(db, split.id, week_start)
+    next_day_number = await split_service.get_next_day_number(db, split)
     return SplitPlanOut(
         id=split.id,
         split_type=split.plan["split_type"],
@@ -39,6 +41,7 @@ async def _to_plan_out(db: AsyncSession, split: GeneratedSplit) -> SplitPlanOut:
             for day in split.plan["days"]
         ],
         completed_day_numbers=sorted(completed),
+        next_day_number=next_day_number,
     )
 
 
@@ -62,6 +65,39 @@ async def get_active_split(
     split = await split_service.get_active_split(db, current_user.id)
     if split is None:
         return None
+    return await _to_plan_out(db, split)
+
+
+@router.get("", response_model=list[SplitSummaryOut])
+async def list_splits(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[SplitSummaryOut]:
+    splits = await split_service.list_splits(db, current_user.id)
+    return [
+        SplitSummaryOut(
+            id=s.id,
+            split_type=s.split_type,
+            days_per_week=s.days_per_week,
+            experience_level=s.experience_level,
+            goal=s.goal,
+            is_active=s.is_active,
+            created_at=s.created_at,
+        )
+        for s in splits
+    ]
+
+
+@router.post("/{split_id}/activate", response_model=SplitPlanOut)
+async def activate_split(
+    split_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SplitPlanOut:
+    try:
+        split = await split_service.activate_split(db, current_user.id, split_id)
+    except ValueError:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Split not found")
     return await _to_plan_out(db, split)
 
 

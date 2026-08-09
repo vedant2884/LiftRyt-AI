@@ -1,11 +1,32 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Dumbbell, Play } from "lucide-react";
+import { listWorkouts } from "../api/workouts";
+import { useActiveWorkoutStore } from "../store/activeWorkoutStore";
 import { useAuthStore } from "../store/authStore";
 import StreaksCards from "../components/StreaksCards";
 import WeightTrendCard from "../components/WeightTrendCard";
 import { formatHeight, formatWeight } from "../lib/units";
+import type { WorkoutSummary } from "../types/workout";
+
+function formatWorkoutDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
+  const workoutInProgress = useActiveWorkoutStore((s) => s.isActive());
+  const activeWorkoutName = useActiveWorkoutStore((s) => s.name);
+  const [lastWorkout, setLastWorkout] = useState<WorkoutSummary | null>(null);
+
+  useEffect(() => {
+    listWorkouts()
+      .then((workouts) => setLastWorkout(workouts[0] ?? null))
+      .catch(() => {
+        // The quick-action card degrades to "Start Workout" with no last-
+        // workout line — not worth a toast for a background dashboard fetch.
+      });
+  }, []);
 
   // ProtectedRoute guarantees user is set before this renders.
   if (!user) return null;
@@ -16,11 +37,42 @@ export default function DashboardPage() {
         <h1 className="mb-2 text-2xl font-semibold">Welcome, {user.full_name}</h1>
 
         <Link
-          to="/coach"
+          to={workoutInProgress ? "/workouts/active" : "/workouts"}
           className="flex items-center justify-between rounded-xl border border-accent/40 bg-accent/10 p-5 transition hover:border-accent"
         >
+          <div className="min-w-0">
+            {workoutInProgress ? (
+              <>
+                <p className="text-xs text-accent">Workout in progress</p>
+                <p className="mt-1 truncate font-medium">{activeWorkoutName}</p>
+              </>
+            ) : lastWorkout ? (
+              <>
+                <p className="text-xs text-accent">Ready to train?</p>
+                <p className="mt-1 text-sm text-ink-secondary">
+                  Last: {lastWorkout.name} &middot; {formatWorkoutDate(lastWorkout.performed_at)} &middot;{" "}
+                  {lastWorkout.set_count} sets
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-accent">Ready to train?</p>
+                <p className="mt-1 text-sm text-ink-secondary">Log your first workout to get started.</p>
+              </>
+            )}
+          </div>
+          <span className="flex shrink-0 items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-sm font-medium text-white">
+            {workoutInProgress ? <Play size={14} /> : <Dumbbell size={14} />}
+            {workoutInProgress ? "Resume" : "Start Workout"}
+          </span>
+        </Link>
+
+        <Link
+          to="/coach"
+          className="flex items-center justify-between rounded-xl border border-line bg-surface p-5 transition hover:border-line-strong"
+        >
           <div>
-            <p className="text-xs text-accent">Chat with your AI coach</p>
+            <p className="text-xs text-ink-muted">Chat with your AI coach</p>
             <p className="mt-1 text-sm text-ink-secondary">
               Grounded in your logged weight and macro targets
             </p>

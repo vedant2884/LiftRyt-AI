@@ -8,6 +8,7 @@ from app.models.chat_session import ChatSession
 from app.models.chat_summary import ChatSummary
 from app.models.custom_exercise import CustomExercise
 from app.models.exercise import Exercise
+from app.models.exercise_progression import ExerciseProgression
 from app.models.favorite_exercise import FavoriteExercise
 from app.models.generated_split import GeneratedSplit
 from app.models.macro_target import MacroTarget
@@ -25,6 +26,7 @@ __all__ = [
     "ChatSummary",
     "CustomExercise",
     "Exercise",
+    "ExerciseProgression",
     "FavoriteExercise",
     "GeneratedSplit",
     "MacroTarget",

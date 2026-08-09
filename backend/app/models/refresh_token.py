@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,3 +26,9 @@ class RefreshToken(Base, UUIDPkMixin, CreatedAtMixin):
     token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Whether the *cookie* backing this token should persist across a
+    # browser restart (Remember Me) or be session-only. Stored here, not
+    # just decided once at login, because /auth/refresh rotates the token
+    # on every use — without persisting the choice, an unchecked Remember Me
+    # would silently become persistent again on the first silent refresh.
+    remember_me: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, Field
 
@@ -40,6 +41,23 @@ class SplitPlanOut(BaseModel):
     # the current week, so the frontend can render checkboxes from this one
     # payload without a second round trip.
     completed_day_numbers: list[int] = []
+    # Which day_number is "today's" in the rotation — see
+    # split_service.get_next_day_number for how this is derived. A
+    # convenience default for the Workout start screen, never enforced.
+    next_day_number: int = 1
+
+
+class SplitSummaryOut(BaseModel):
+    """Lean shape for browsing a user's saved splits (GET /splits) — no
+    plan/exercise payload, just enough to pick one to activate."""
+
+    id: uuid.UUID
+    split_type: str
+    days_per_week: int
+    experience_level: ExperienceLevel
+    goal: TrainingGoal
+    is_active: bool
+    created_at: datetime
 
 
 class DayCompletionOut(BaseModel):

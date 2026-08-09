@@ -69,6 +69,13 @@ class User(Base, UUIDPkMixin, CreatedAtMixin, UpdatedAtMixin):
     # choice that applies in either mode, added in step 11 alongside the
     # actual theme system that uses it.
     accent_color: Mapped[str] = mapped_column(String(30), nullable=False, default="violet")
+    # Progressive overload: the weight bump suggested after a confirmed PR
+    # when no per-exercise override exists (see ExerciseProgression). Purely
+    # a default the user configures in Settings — never applied
+    # automatically to a PR without their explicit per-PR confirmation.
+    default_progression_increment_kg: Mapped[Decimal] = mapped_column(
+        Numeric(4, 2), nullable=False, default=Decimal("2.5")
+    )
 
     # Null until the post-signup guided flow is finished or skipped. Checked
     # once, right after signup redirects here — not a persistent gate on

@@ -9,6 +9,7 @@ from app.api.routers import (
     exercises,
     favorites,
     macros,
+    progressions,
     recommendations,
     splits,
     streaks,
@@ -43,6 +44,7 @@ app.include_router(auth.router)
 # ever reaching these routers).
 app.include_router(custom_exercises.router)
 app.include_router(favorites.router)
+app.include_router(progressions.router)
 app.include_router(exercises.router)
 app.include_router(weight.router)
 app.include_router(workouts.router)
