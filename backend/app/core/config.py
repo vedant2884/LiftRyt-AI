@@ -1,3 +1,5 @@
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -24,16 +26,29 @@ class Settings(BaseSettings):
 
     @field_validator("database_url")
     @classmethod
-    def _use_asyncpg_driver(cls, value: str) -> str:
-        # Render (and most managed-Postgres hosts) hand back a plain
+    def _normalize_managed_postgres_url(cls, value: str) -> str:
+        # Managed Postgres hosts (Render, Neon, ...) hand back a plain
         # postgres://... or postgresql://... URL, but create_async_engine
         # needs the asyncpg driver named explicitly in the scheme. Local dev
-        # already sets this correctly via docker-compose.yml, so this is a
-        # no-op there.
+        # already sets this correctly via docker-compose.yml, so this branch
+        # is a no-op there.
         if value.startswith("postgres://"):
-            return "postgresql+asyncpg://" + value[len("postgres://") :]
-        if value.startswith("postgresql://"):
-            return "postgresql+asyncpg://" + value[len("postgresql://") :]
+            value = "postgresql+asyncpg://" + value[len("postgres://") :]
+        elif value.startswith("postgresql://"):
+            value = "postgresql+asyncpg://" + value[len("postgresql://") :]
+
+        # Neon (and others) append ?sslmode=require, the libpq/psycopg
+        # spelling — asyncpg's connect() has no sslmode kwarg, only ssl, so
+        # SQLAlchemy's asyncpg dialect would otherwise forward an argument
+        # asyncpg rejects outright. Renaming the query key is enough; both
+        # drivers accept the same "require" string value.
+        parts = urlsplit(value)
+        query = parse_qsl(parts.query)
+        if query and any(key == "sslmode" for key, _ in query):
+            query = [("ssl", v) if k == "sslmode" else (k, v) for k, v in query]
+            parts = parts._replace(query=urlencode(query))
+            value = urlunsplit(parts)
+
         return value
 
     # Same pattern as database_url: set via docker-compose.yml in Docker,

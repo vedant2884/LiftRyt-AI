@@ -1,17 +1,29 @@
 ########################################################################
-# Render Blueprint — deploys the backend as a Docker web service plus a
-# managed Postgres database. Redis is included since app/core/redis.py
-# uses it for real login-attempt rate limiting, not just as a nice-to-have.
+# Render Blueprint — deploys the backend as a Docker web service. Postgres
+# and Redis are deliberately NOT Render's own managed offerings (Render's
+# free Postgres is deleted after 30 days, and it has no free Redis/Key-
+# Value tier at all) — instead DATABASE_URL/REDIS_URL point at free-forever
+# external instances (Neon for Postgres, Upstash for Redis), entered as
+# secrets during blueprint setup. This keeps the whole stack genuinely
+# free, matching a resume/portfolio project's actual requirements.
 #
 # To use: Render dashboard -> New -> Blueprint -> connect this repo. Render
 # reads this file automatically. Env vars marked `sync: false` are prompted
 # for during blueprint setup and stored as secrets — never put real secret
 # values in this file, it's committed to a public repo.
 #
-# Known tradeoffs worth reading before deploying (see the chat writeup for
-# the fuller version):
-#   - Render's free Postgres plan is deleted after 30 days. Use `starter`
-#     (paid) instead if this needs to outlive a demo.
+# Before deploying:
+#   1. Create a free Postgres database at neon.tech (pgvector is supported
+#      out of the box — the app's own migration runs `CREATE EXTENSION
+#      vector` on first boot). Copy its connection string for DATABASE_URL
+#      below; app/core/config.py normalizes both the driver scheme and
+#      Neon's ?sslmode=require automatically, no manual edits needed.
+#   2. Create a free Redis database at upstash.com. Copy its connection
+#      string (the redis:// or rediss:// one, not the REST API URL) for
+#      REDIS_URL below.
+#
+# Known tradeoffs worth knowing about (see the chat writeup for the fuller
+# version):
 #   - The backend's free web service plan spins down after ~15min idle;
 #     the next request pays a cold-start cost, including re-downloading the
 #     ~90MB sentence-transformers model on every cold start (no persistent
@@ -19,20 +31,14 @@
 #   - Uploaded avatars (backend/app/core/storage.py, local disk) don't
 #     survive a redeploy or a free-plan cold-start restart, for the same
 #     ephemeral-disk reason. Fine for a demo, not for real user data
-#     without adding a Render persistent disk (paid) or real object storage.
+#     without real object storage or a paid persistent disk.
+#   - Neon's and Upstash's free tiers auto-pause/idle after inactivity too
+#     (data isn't deleted, just resumes on the next connection with a
+#     short delay) — expect the very first request after a quiet period
+#     to be slow across the whole stack, not just the Render cold start.
 ########################################################################
 
-databases:
-  - name: liftryt-postgres
-    plan: free # 30-day expiry — switch to `starter` for anything longer-lived
-    postgresMajorVersion: "16"
-
 services:
-  - type: redis
-    name: liftryt-redis
-    plan: starter # Render has no free Redis/Key-Value tier
-    ipAllowList: [] # internal-only access from the backend service
-
   - type: web
     name: liftryt-backend
     runtime: docker
@@ -46,15 +52,11 @@ services:
       - key: APP_NAME
         value: LiftRyt AI
 
+      # Free external instances — see the setup notes above.
       - key: DATABASE_URL
-        fromDatabase:
-          name: liftryt-postgres
-          property: connectionString
+        sync: false
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: liftryt-redis
-          property: connectionString
+        sync: false
 
       # Real random secret, set during blueprint creation — never the
       # committed dev default.
