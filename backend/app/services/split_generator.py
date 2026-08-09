@@ -13,9 +13,16 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType
+from app.models.custom_exercise import CustomExercise
+from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType, TrainingGoal
 from app.models.exercise import Exercise
-from app.schemas.split import TrainingGoal
+from app.models.favorite_exercise import FavoriteExercise
+
+# Either source is a valid candidate for a generated split — see
+# CustomExercise's docstring. They share every attribute this module reads
+# (id, name, category, movement_type, difficulty, primary_muscles), so the
+# selection algorithm below never needs to branch on which one it has.
+ExerciseLike = Exercise | CustomExercise
 
 DAY_LABELS: dict[str, str] = {
     "full_body": "Full Body",
@@ -115,17 +122,18 @@ def _round_half_up(x: float) -> int:
     return int(x + 0.5)
 
 
-def _reason(exercise: Exercise, goal: TrainingGoal) -> str:
+def _reason(exercise: ExerciseLike, goal: TrainingGoal) -> str:
     muscles = ", ".join(m.replace("_", " ") for m in exercise.primary_muscles)
+    suffix = " (one of your custom exercises)" if isinstance(exercise, CustomExercise) else ""
     if exercise.movement_type == MovementType.COMPOUND:
         goal_label = goal.value.replace("_", " ")
-        return f"Compound movement targeting {muscles} — prioritized for a {goal_label} goal."
-    return f"Isolation movement adding targeted {muscles} volume."
+        return f"Compound movement targeting {muscles}, prioritized for a {goal_label} goal.{suffix}"
+    return f"Isolation movement adding targeted {muscles} volume.{suffix}"
 
 
 @dataclass
 class SplitExercisePick:
-    exercise: Exercise
+    exercise: ExerciseLike
     sets: int
     reps: str
     reason: str
@@ -145,15 +153,22 @@ class SplitPlan:
 
 
 def _select_exercises(
-    pool: list[Exercise],
+    pool: list[ExerciseLike],
     count: int,
     compound_target: int,
     used_exercise_ids: set[uuid.UUID],
-) -> list[Exercise]:
+    favorite_ids: set[uuid.UUID],
+) -> list[ExerciseLike]:
     """Prefers exercises not already used elsewhere in the split — falls
-    back to repeats only if the unused pool can't cover the need."""
+    back to repeats only if the unused pool can't cover the need. Within
+    that, favorited exercises are preferred first (see the sort below):
+    "prioritize favorites unless the user explicitly requests otherwise" —
+    the AI coach's tool-calling path is exactly that override, since it can
+    still ask for a specific goal/experience combination that steers the
+    pool regardless of favorites.
+    """
 
-    def pick(candidates: list[Exercise], n: int, already: list[Exercise]) -> list[Exercise]:
+    def pick(candidates: list[ExerciseLike], n: int, already: list[ExerciseLike]) -> list[ExerciseLike]:
         unused = [e for e in candidates if e.id not in used_exercise_ids and e not in already]
         chosen = unused[:n]
         if len(chosen) < n:
@@ -161,21 +176,27 @@ def _select_exercises(
             chosen += remaining[: n - len(chosen)]
         return chosen
 
-    compounds = [e for e in pool if e.movement_type == MovementType.COMPOUND]
-    isolations = [e for e in pool if e.movement_type == MovementType.ISOLATION]
+    # Stable sort: favorited exercises float to the front of the pool
+    # (within their own compound/isolation bucket below), everything else
+    # keeps its original relative order.
+    ranked = sorted(pool, key=lambda e: e.id not in favorite_ids)
+
+    compounds = [e for e in ranked if e.movement_type == MovementType.COMPOUND]
+    isolations = [e for e in ranked if e.movement_type == MovementType.ISOLATION]
 
     chosen = pick(compounds, min(compound_target, count), [])
     chosen += pick(isolations, count - len(chosen), chosen)
     if len(chosen) < count:
-        chosen += pick(pool, count - len(chosen), chosen)
+        chosen += pick(ranked, count - len(chosen), chosen)
     return chosen
 
 
 def _pick_for_category(
-    pool: list[Exercise],
+    pool: list[ExerciseLike],
     count: int,
     compound_ratio: float,
     used_exercise_ids: set[uuid.UUID],
+    favorite_ids: set[uuid.UUID],
     sets: int,
     reps: str,
     goal: TrainingGoal,
@@ -183,7 +204,9 @@ def _pick_for_category(
     if count <= 0 or not pool:
         return []
 
-    chosen = _select_exercises(pool, count, _round_half_up(count * compound_ratio), used_exercise_ids)
+    chosen = _select_exercises(
+        pool, count, _round_half_up(count * compound_ratio), used_exercise_ids, favorite_ids
+    )
     for exercise in chosen:
         used_exercise_ids.add(exercise.id)
 
@@ -198,13 +221,19 @@ async def generate_split(
     days_per_week: int,
     experience_level: ExperienceLevel,
     goal: TrainingGoal,
+    user_id: uuid.UUID | None = None,
 ) -> SplitPlan:
+    """user_id is optional so this function still works standalone (e.g.
+    tests) without a real account — when given, the candidate pool also
+    draws from that user's custom exercises, and their favorites (of either
+    source) are preferred within each category. Both are genuinely used at
+    generation time, not merged into the shared exercises table."""
     split_type, day_types = _split_template(days_per_week, experience_level)
     allowed_difficulties = ALLOWED_DIFFICULTY[experience_level]
 
     # Fetch every candidate once, grouped by category — the whole library
     # is small enough that this beats re-querying per day.
-    candidates_by_category: dict[ExerciseCategory, list[Exercise]] = {}
+    candidates_by_category: dict[ExerciseCategory, list[ExerciseLike]] = {}
     for category in ExerciseCategory:
         rows = (
             await db.scalars(
@@ -214,6 +243,25 @@ async def generate_split(
             )
         ).all()
         candidates_by_category[category] = list(rows)
+
+    favorite_ids: set[uuid.UUID] = set()
+    if user_id is not None:
+        custom_rows = (
+            await db.scalars(
+                select(CustomExercise).where(
+                    CustomExercise.user_id == user_id,
+                    CustomExercise.difficulty.in_(allowed_difficulties),
+                )
+            )
+        ).all()
+        for custom_exercise in custom_rows:
+            candidates_by_category.setdefault(custom_exercise.category, []).append(custom_exercise)
+
+        favorites = (
+            await db.scalars(select(FavoriteExercise).where(FavoriteExercise.user_id == user_id))
+        ).all()
+        for favorite in favorites:
+            favorite_ids.add(favorite.exercise_id or favorite.custom_exercise_id)
 
     used_exercise_ids: set[uuid.UUID] = set()
     days: list[SplitDayPlan] = []
@@ -233,6 +281,7 @@ async def generate_split(
                     count,
                     compound_ratio,
                     used_exercise_ids,
+                    favorite_ids,
                     sets,
                     reps,
                     goal,

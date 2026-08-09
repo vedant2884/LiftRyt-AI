@@ -14,3 +14,18 @@ export async function generateSplit(
   });
   return res.data;
 }
+
+export async function fetchActiveSplit(): Promise<SplitPlan | null> {
+  const res = await api.get<SplitPlan | null>("/splits/active");
+  return res.data;
+}
+
+export interface DayCompletion {
+  day_index: number;
+  completed: boolean;
+}
+
+export async function toggleDayComplete(splitId: string, dayIndex: number): Promise<DayCompletion> {
+  const res = await api.post<DayCompletion>(`/splits/${splitId}/days/${dayIndex}/toggle-complete`);
+  return res.data;
+}

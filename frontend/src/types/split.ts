@@ -20,9 +20,11 @@ export interface SplitDay {
 }
 
 export interface SplitPlan {
+  id: string;
   split_type: string;
   days_per_week: number;
   experience_level: ExperienceLevel;
   goal: TrainingGoal;
   days: SplitDay[];
+  completed_day_numbers: number[];
 }

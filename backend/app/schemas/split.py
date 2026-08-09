@@ -1,21 +1,8 @@
 import uuid
-from enum import Enum
 
 from pydantic import BaseModel, Field
 
-from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType
-
-
-class TrainingGoal(str, Enum):
-    """Distinct from MacroGoal (cut/maintain/bulk) — that's a nutrition goal
-    and doesn't meaningfully change workout structure (you can build muscle
-    in a surplus or a deficit). This is what actually drives sets/reps and
-    exercise selection: strength favors low reps and compound movements,
-    hypertrophy favors moderate reps and more isolation volume."""
-
-    STRENGTH = "strength"
-    HYPERTROPHY = "hypertrophy"
-    GENERAL_FITNESS = "general_fitness"
+from app.models.enums import ExerciseCategory, ExperienceLevel, MovementType, TrainingGoal
 
 
 class SplitGenerateRequest(BaseModel):
@@ -29,6 +16,8 @@ class SplitExerciseOut(BaseModel):
     name: str
     category: ExerciseCategory
     movement_type: MovementType
+    is_custom: bool = False
+    primary_muscles: list[str] = []
     sets: int
     reps: str
     reason: str
@@ -41,8 +30,18 @@ class SplitDayOut(BaseModel):
 
 
 class SplitPlanOut(BaseModel):
+    id: uuid.UUID
     split_type: str
     days_per_week: int
     experience_level: ExperienceLevel
     goal: TrainingGoal
     days: list[SplitDayOut]
+    # Which day_number values have a completion logged since the start of
+    # the current week, so the frontend can render checkboxes from this one
+    # payload without a second round trip.
+    completed_day_numbers: list[int] = []
+
+
+class DayCompletionOut(BaseModel):
+    day_index: int
+    completed: bool
