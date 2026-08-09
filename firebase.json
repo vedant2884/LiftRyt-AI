@@ -1,0 +1,20 @@
+{
+  "hosting": {
+    "public": "frontend/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "comment": "React Router client-side routing — every path serves index.html and the router takes it from there. Without this, a direct load of e.g. /dashboard 404s at the CDN before React ever runs.",
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "comment": "Vite fingerprints these filenames (index-<hash>.js) — a new deploy ships new filenames, so caching the old ones forever is safe and never serves stale code.",
+        "source": "/assets/**",
+        "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+      }
+    ]
+  }
+}

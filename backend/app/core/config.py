@@ -1,3 +1,4 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,20 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://liftryt:liftryt_dev_password@localhost:5432/liftryt"
     )
+
+    @field_validator("database_url")
+    @classmethod
+    def _use_asyncpg_driver(cls, value: str) -> str:
+        # Render (and most managed-Postgres hosts) hand back a plain
+        # postgres://... or postgresql://... URL, but create_async_engine
+        # needs the asyncpg driver named explicitly in the scheme. Local dev
+        # already sets this correctly via docker-compose.yml, so this is a
+        # no-op there.
+        if value.startswith("postgres://"):
+            return "postgresql+asyncpg://" + value[len("postgres://") :]
+        if value.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + value[len("postgresql://") :]
+        return value
 
     # Same pattern as database_url: set via docker-compose.yml in Docker,
     # localhost fallback for running the backend outside Docker.
@@ -62,6 +77,17 @@ class Settings(BaseSettings):
     @property
     def cookie_secure(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def cookie_samesite(self) -> str:
+        """"lax" works fine in local dev, where the frontend and backend
+        share an effective origin via the same host. In a real deployment
+        the frontend (Firebase Hosting) and backend (a separate host) are on
+        different domains, and a cross-site fetch/XHR never attaches a Lax
+        cookie — only "none" is sent cross-site, which browsers additionally
+        require to be paired with Secure (already guaranteed here, since
+        both flip on the same environment=="production" condition)."""
+        return "none" if self.environment == "production" else "lax"
 
 
 settings = Settings()

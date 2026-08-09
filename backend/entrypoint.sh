@@ -12,4 +12,12 @@ python -m app.db.embed_exercises
 # can even fail) the first embedding call of each process instead of just
 # using the cache that's already sitting right there.
 export HF_HUB_OFFLINE=1
-exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# --reload watches the filesystem for changes via the local bind mount —
+# meaningful in dev, pure overhead (and an extra reloader process to
+# manage) in a deployed container with no bind mount to watch.
+if [ "$ENVIRONMENT" = "production" ]; then
+  exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+else
+  exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+fi

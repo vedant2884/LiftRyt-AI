@@ -2,6 +2,10 @@
 .env
 backend/.env
 frontend/.env
+frontend/.env.production
+
+# Firebase CLI local state
+.firebase/
 
 # Node
 node_modules/

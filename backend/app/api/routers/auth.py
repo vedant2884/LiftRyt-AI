@@ -74,7 +74,7 @@ async def _issue_refresh_cookie(db: AsyncSession, user_id: uuid.UUID, response: 
         value=raw_token,
         httponly=True,
         secure=settings.cookie_secure,
-        samesite="lax",
+        samesite=settings.cookie_samesite,
         max_age=settings.refresh_token_expire_days * 24 * 60 * 60,
         path=REFRESH_COOKIE_PATH,
     )
