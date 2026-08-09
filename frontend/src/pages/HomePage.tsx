@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { useAuthStore } from "../store/authStore";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -12,6 +13,8 @@ const staggerContainer = {
   visible: { transition: { staggerChildren: 0.1 } },
 };
 
+const CTA_LABEL = "Get started free";
+
 interface Feature {
   title: string;
   description: string;
@@ -22,7 +25,7 @@ const FEATURES: Feature[] = [
   {
     title: "AI Gym Coach",
     description:
-      "A chat coach that retrieves your real weight trend, workout history, and PRs before it answers — and calls real tools instead of guessing.",
+      "A chat coach that checks your real weight trend and macro targets before it answers, and uses real tools instead of guessing.",
     icon: (
       <path
         d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"
@@ -33,13 +36,13 @@ const FEATURES: Feature[] = [
   {
     title: "Weight Trend Analytics",
     description:
-      "Log your weight and get 7/30-day moving averages, weekly trends, and a regression-based projection to your goal — computed in SQL.",
+      "Log your weight and see 7-day and 30-day trends, plus a projected date for hitting your goal weight, based on your actual logged history, not a guess.",
     icon: <path d="M3 17 9 11l4 4 8-8M15 6h6v6" strokeWidth="1.5" />,
   },
   {
-    title: "Workout Logging",
+    title: "Weekly Check-Ins",
     description:
-      "Log sets and reps against a real exercise database. PRs are auto-detected and volume is tracked per muscle group over time.",
+      "On demand, the coach reviews your recent trend and macro adherence and writes a short, honest check-in, not a generic pep talk.",
     icon: (
       <path
         d="M6 8v8M18 8v8M2 12h2M20 12h2M6 12h12"
@@ -51,7 +54,7 @@ const FEATURES: Feature[] = [
   {
     title: "Rule-Based Split Generator",
     description:
-      "Give it your days per week, experience, and goal — get a real structured split with a stated reason for every exercise, not an LLM freehanding it.",
+      "Give it your days per week, experience, and goal, and get a real structured split with a stated reason for every exercise, not an AI freehanding it.",
     icon: (
       <path
         d="M4 4h16v16H4z M4 10h16 M10 10v10"
@@ -62,13 +65,13 @@ const FEATURES: Feature[] = [
   {
     title: "Macro & Calorie Targets",
     description:
-      "Mifflin-St Jeor BMR, TDEE, and a macro split tuned to your goal and bodyweight — saved once, referenced everywhere, never re-hallucinated.",
+      "A calorie and macro split tuned to your goal and bodyweight using a trusted, established formula, saved once and referenced everywhere.",
     icon: <path d="M12 2v10l7 7A10 10 0 1 0 12 2Z" strokeWidth="1.5" />,
   },
   {
-    title: "Exercise Library + Semantic Search",
+    title: "Exercise Library + Smart Search",
     description:
-      "Browse by muscle, equipment, and difficulty, or search by meaning — pgvector finds relevant exercises even when your words don't match.",
+      "Browse by muscle, equipment, and difficulty, or just describe what you need in plain words and get relevant exercises back, even if you don't know the exact name.",
     icon: (
       <path
         d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14ZM21 21l-4.35-4.35"
@@ -83,21 +86,23 @@ const STEPS = [
   {
     n: "01",
     title: "Tell it about you",
-    body: "Sign up with your stats, activity level, and goal — the same profile every calculation and recommendation is grounded in.",
+    body: "Sign up with your stats, activity level, and goal. That's the profile every calculation and recommendation is grounded in.",
   },
   {
     n: "02",
-    title: "Log your training",
-    body: "Weight, workouts, sets and reps. Every entry feeds the trend analytics, PR detection, and the coach's context.",
+    title: "Log your weight, set your targets",
+    body: "Weight entries feed your trend chart, and your macro targets are calculated and saved so the coach can reference them.",
   },
   {
     n: "03",
     title: "Get guidance that's actually yours",
-    body: "Ask the coach anything. It retrieves your real data first, calls the split generator or macro calculator when needed, and explains why.",
+    body: "Ask the coach anything. It checks your real data first, builds a split or a macro target when needed, and explains why.",
   },
 ];
 
 export default function HomePage() {
+  const isAuthenticated = useAuthStore((s) => s.user !== null);
+
   return (
     <main className="bg-bg text-ink">
       {/* Nav */}
@@ -107,15 +112,26 @@ export default function HomePage() {
             Lift<span className="text-accent">Ryt</span> AI
           </span>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="text-sm text-ink-secondary hover:text-ink">
-              Log in
-            </Link>
-            <Link
-              to="/signup"
-              className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              Get started
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+              >
+                Go to dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm text-ink-secondary hover:text-ink">
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+                >
+                  {CTA_LABEL}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -154,8 +170,8 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
             className="mx-auto mt-6 max-w-xl text-lg text-ink-secondary"
           >
-            LiftRyt AI tracks your weight, workouts, and PRs — then gives you a
-            coach that retrieves that real history before it answers, instead
+            LiftRyt AI tracks your weight and macro targets, then gives you a
+            coach that checks your real history before it answers, instead
             of freehanding generic advice.
           </motion.p>
           <motion.div
@@ -163,18 +179,29 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
             className="mt-10 flex items-center justify-center gap-4"
           >
-            <Link
-              to="/signup"
-              className="rounded-md bg-accent px-6 py-3 font-medium text-white transition hover:opacity-90"
-            >
-              Get started free
-            </Link>
-            <Link
-              to="/login"
-              className="rounded-md border border-line-strong px-6 py-3 font-medium transition hover:bg-surface-hover"
-            >
-              Log in
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="rounded-md bg-accent px-6 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+              >
+                Go to dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/signup"
+                  className="rounded-md bg-accent px-6 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+                >
+                  {CTA_LABEL}
+                </Link>
+                <Link
+                  to="/login"
+                  className="rounded-md border border-line-strong px-6 py-3 font-medium transition hover:bg-surface-hover active:scale-[0.97]"
+                >
+                  Log in
+                </Link>
+              </>
+            )}
           </motion.div>
         </motion.div>
       </section>
@@ -192,9 +219,8 @@ export default function HomePage() {
             Every core feature is real, not a mockup
           </motion.h2>
           <motion.p variants={fadeUp} className="mx-auto mt-3 max-w-xl text-ink-secondary">
-            Built on a Postgres schema with real SQL analytics, a rule-based
-            generator, and a working RAG pipeline — the coach calls these as
-            tools rather than inventing answers.
+            No fake demo data and no screenshots of screens that don't work. Every
+            number the coach gives you is calculated from your own logged history.
           </motion.p>
         </motion.div>
 
@@ -235,7 +261,7 @@ export default function HomePage() {
           whileInView="visible"
           viewport={{ once: true, margin: "-80px" }}
           variants={staggerContainer}
-          className="mx-auto max-w-5xl"
+          className="mx-auto max-w-6xl"
         >
           <motion.h2
             variants={fadeUp}
@@ -264,24 +290,34 @@ export default function HomePage() {
           variants={staggerContainer}
         >
           <motion.h2 variants={fadeUp} className="text-3xl font-semibold tracking-tight">
-            Your training history is the whole point.
+            Your training data is the whole point.
           </motion.h2>
           <motion.p variants={fadeUp} className="mx-auto mt-3 max-w-md text-ink-secondary">
-            Start logging, and the coach gets more useful with every entry.
+            Start logging your weight, and the coach gets more useful with every entry.
           </motion.p>
           <motion.div variants={fadeUp} className="mt-8">
-            <Link
-              to="/signup"
-              className="inline-block rounded-md bg-accent px-8 py-3 font-medium text-white transition hover:opacity-90"
-            >
-              Create your account
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/dashboard"
+                className="inline-block rounded-md bg-accent px-8 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+              >
+                Go to dashboard
+              </Link>
+            ) : (
+              <Link
+                to="/signup"
+                className="inline-block rounded-md bg-accent px-8 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
+              >
+                {CTA_LABEL}
+              </Link>
+            )}
           </motion.div>
         </motion.div>
       </section>
 
       <footer className="border-t border-line px-6 py-8 text-center text-xs text-ink-muted">
-        LiftRyt AI — a portfolio project. Not a substitute for professional medical or nutrition advice.
+        LiftRyt AI is a portfolio project built to demonstrate a real, working full-stack app.
+        Not a substitute for professional medical or nutrition advice.
       </footer>
     </main>
   );

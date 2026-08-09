@@ -1,4 +1,5 @@
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -12,7 +13,11 @@ import {
   YAxis,
 } from "recharts";
 import { deleteWeightLog, fetchWeightAnalytics, fetchWeightLogs, logWeight } from "../api/weight";
+import { EmptyState } from "../components/EmptyState";
+import { ScaleIcon } from "../components/icons";
+import { StatCardSkeletonRow } from "../components/Skeleton";
 import { getChartTheme } from "../lib/chartTheme";
+import { toast } from "../store/toastStore";
 import { useThemeStore } from "../store/themeStore";
 import type { WeightAnalytics, WeightLog } from "../types/weight";
 
@@ -33,11 +38,13 @@ export default function WeightPage() {
 
   const [analytics, setAnalytics] = useState<WeightAnalytics | null>(null);
   const [logs, setLogs] = useState<WeightLog[]>([]);
+  const [loading, setLoading] = useState(true);
   const [weightInput, setWeightInput] = useState("");
   const [dateInput, setDateInput] = useState(() => new Date().toISOString().slice(0, 10));
   const [noteInput, setNoteInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const weightInputRef = useRef<HTMLInputElement>(null);
 
   async function refresh() {
     const [a, l] = await Promise.all([fetchWeightAnalytics(), fetchWeightLogs()]);
@@ -46,8 +53,13 @@ export default function WeightPage() {
   }
 
   useEffect(() => {
-    refresh();
+    refresh().finally(() => setLoading(false));
   }, []);
+
+  function focusWeightInput() {
+    weightInputRef.current?.focus();
+    weightInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -63,6 +75,7 @@ export default function WeightPage() {
       setWeightInput("");
       setNoteInput("");
       await refresh();
+      toast.success("Weight logged");
     } catch {
       setError("Failed to save. Please try again.");
     } finally {
@@ -80,7 +93,7 @@ export default function WeightPage() {
     trend?.rate_kg_per_week == null ? null : trend.rate_kg_per_week < 0 ? "down" : "up";
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-10">
+    <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
       <h1 className="mb-6 text-2xl font-semibold">Weight Tracker</h1>
 
       <form
@@ -92,6 +105,7 @@ export default function WeightPage() {
             Weight (kg)
           </label>
           <input
+            ref={weightInputRef}
             id="weight"
             type="number"
             step="0.1"
@@ -127,20 +141,36 @@ export default function WeightPage() {
         <button
           type="submit"
           disabled={saving}
-          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+          className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
         >
           {saving ? "Saving..." : "Log weight"}
         </button>
         {error && <p className="w-full text-sm text-red-400">{error}</p>}
       </form>
 
-      {analytics && (
+      {loading && <StatCardSkeletonRow />}
+
+      {!loading && logs.length === 0 && (
+        <div className="mb-8 rounded-xl border border-line bg-surface">
+          <EmptyState
+            icon={ScaleIcon}
+            message="No weight logged yet. Log your first entry to start tracking your trend."
+            actionLabel="Log your first entry"
+            onAction={focusWeightInput}
+          />
+        </div>
+      )}
+
+      {!loading && analytics && logs.length > 0 && (
         <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-xl border border-line bg-surface p-4">
             <p className="text-xs text-ink-muted">Current weight</p>
             <p className="mt-1 text-2xl font-semibold">
               {analytics.current_weight_kg != null ? `${analytics.current_weight_kg} kg` : "—"}
             </p>
+            {analytics.current_weight_kg == null && (
+              <p className="mt-1 text-xs text-ink-muted">Log an entry below to see this.</p>
+            )}
           </div>
           <div className="rounded-xl border border-line bg-surface p-4">
             <p className="text-xs text-ink-muted">Rate of change</p>
@@ -155,14 +185,26 @@ export default function WeightPage() {
             >
               {trend?.rate_kg_per_week != null ? `${trend.rate_kg_per_week} kg/wk` : "—"}
             </p>
+            {trend?.rate_kg_per_week == null && (
+              <p className="mt-1 text-xs text-ink-muted">Log at least 2 entries to see your trend.</p>
+            )}
           </div>
           <div className="rounded-xl border border-line bg-surface p-4">
             <p className="text-xs text-ink-muted">Projected goal date</p>
             <p className="mt-1 text-2xl font-semibold">
               {trend?.projected_goal_date ? formatDate(trend.projected_goal_date) : "—"}
             </p>
-            {trend?.goal_weight_kg != null && (
+            {trend?.goal_weight_kg != null && trend?.projected_goal_date ? (
               <p className="mt-0.5 text-xs text-ink-muted">at {trend.goal_weight_kg} kg goal</p>
+            ) : trend?.goal_weight_kg == null ? (
+              <p className="mt-1 text-xs text-ink-muted">
+                <Link to="/profile" className="text-accent hover:underline">
+                  Set a goal weight
+                </Link>{" "}
+                to see a projection.
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-ink-muted">Needs a clear trend to project a date.</p>
             )}
           </div>
         </div>
@@ -171,7 +213,7 @@ export default function WeightPage() {
       {analytics && analytics.series.length > 1 && (
         <div className="mb-8 rounded-xl border border-line bg-surface p-4">
           <h2 className="mb-4 text-sm font-medium text-ink-secondary">
-            Weight over time — with 7-day and 30-day moving averages
+            Weight over time, with 7-day and 30-day moving averages
           </h2>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={analytics.series} margin={{ left: 0 }}>
@@ -270,7 +312,7 @@ export default function WeightPage() {
                 <div>
                   <span className="font-medium">{log.weight_kg} kg</span>
                   <span className="ml-2 text-ink-muted">{formatDate(log.logged_at)}</span>
-                  {log.note && <span className="ml-2 text-ink-muted">— {log.note}</span>}
+                  {log.note && <span className="ml-2 text-ink-muted">&middot; {log.note}</span>}
                 </div>
                 <button
                   onClick={() => handleDelete(log.id)}

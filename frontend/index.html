@@ -2,9 +2,47 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LiftRyt AI</title>
+    <meta
+      name="description"
+      content="LiftRyt AI tracks your weight and macro targets, then gives you a coach that checks your real history before it answers, instead of freehanding generic advice."
+    />
+
+    <!-- Dynamic favicon: id="favicon" is the hook lib/favicon.ts looks up
+         to swap the href when the accent theme changes (see themeStore.ts's
+         applyToDocument). "Purple" (violet/AI theme) is the static default
+         shown until JS runs — themeStore rehydrates and calls
+         applyToDocument() synchronously on app mount, so this only shows
+         for a brief pre-hydration moment on an Emerald-themed return visit. -->
+    <link id="favicon" rel="icon" type="image/png" href="/branding/favicon-purple.png" />
+    <link rel="apple-touch-icon" href="/branding/apple-touch-icon.png" />
+    <link rel="manifest" href="/branding/site.webmanifest" />
+    <!-- Updated live alongside the favicon (see lib/favicon.ts) — colors
+         Android Chrome's address bar / iOS Safari's UI to match the theme. -->
+    <meta id="theme-color-meta" name="theme-color" content="#7b32fb" />
+
+    <!-- Open Graph / Twitter Card. og:image and og:url use relative paths
+         here since this project has no fixed production domain yet — swap
+         in an absolute URL (e.g. https://your-domain.com/assets/og-image.png)
+         once deployed, since most crawlers require an absolute image URL. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LiftRyt AI — Train with data, not vibes." />
+    <meta
+      property="og:description"
+      content="An AI gym coach that knows your actual training. LiftRyt AI tracks your weight and macro targets, then gives you a coach that checks your real history before it answers."
+    />
+    <meta property="og:image" content="/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LiftRyt AI — Train with data, not vibes." />
+    <meta
+      name="twitter:description"
+      content="An AI gym coach that knows your actual training. LiftRyt AI tracks your weight and macro targets, then gives you a coach that checks your real history before it answers."
+    />
+    <meta name="twitter:image" content="/assets/og-image.png" />
   </head>
   <body>
     <div id="root"></div>

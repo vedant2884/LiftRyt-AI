@@ -59,3 +59,30 @@ body {
   background: var(--bg);
   color: var(--ink);
 }
+
+/* Single global switch for every CSS-driven animation/transition (skeleton
+   pulse, toast slide-in, button hover/active transitions, ...) so nothing
+   needs its own per-component media query. Framer Motion animations (page
+   transitions, the dumbbell spinner) aren't CSS and are handled separately
+   via useReducedMotion() at their call sites. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@keyframes toast-slide-in {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

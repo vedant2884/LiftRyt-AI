@@ -1,0 +1,83 @@
+<svg viewBox="0 0 1920 1080" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.28"/>
+      <stop offset="45%" stop-color="#5b21b6" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#08080b"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </linearGradient>
+
+    <linearGradient id="trendStroke" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="20%" stop-color="#8b5cf6" stop-opacity="0.55"/>
+      <stop offset="80%" stop-color="#a78bfa" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="trendStroke2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0"/>
+      <stop offset="25%" stop-color="#6d28d9" stop-opacity="0.3"/>
+      <stop offset="75%" stop-color="#7c3aed" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </linearGradient>
+
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M 64 0 L 0 0 0 64" fill="none" stroke="#ffffff" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+
+    <radialGradient id="dotFade" cx="50%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="gridMask">
+      <rect width="1920" height="1080" fill="url(#dotFade)"/>
+    </mask>
+  </defs>
+
+  <!-- base -->
+  <rect width="1920" height="1080" fill="url(#base)"/>
+
+  <!-- soft central glow behind where the auth card sits -->
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+
+  <!-- faint grid, fading toward edges -->
+  <rect width="1920" height="1080" fill="url(#grid)" mask="url(#gridMask)"/>
+
+  <!-- ascending trend lines (weight/progress data motif) -->
+  <path d="M -100 820 C 300 780, 500 700, 760 640 S 1180 480, 1450 360 S 1850 180, 2020 120"
+        fill="none" stroke="url(#trendStroke)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M -100 900 C 320 890, 560 820, 820 760 S 1220 620, 1500 520 S 1880 340, 2020 280"
+        fill="none" stroke="url(#trendStroke2)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- data points along the primary trend line -->
+  <g fill="#a78bfa">
+    <circle cx="760" cy="640" r="3" opacity="0.5"/>
+    <circle cx="1180" cy="480" r="3" opacity="0.55"/>
+    <circle cx="1450" cy="360" r="3.5" opacity="0.6"/>
+  </g>
+
+  <!-- concentric plate rings, bottom-left, very subtle -->
+  <g stroke="#7c3aed" fill="none">
+    <circle cx="180" cy="960" r="220" stroke-opacity="0.06" stroke-width="1.5"/>
+    <circle cx="180" cy="960" r="150" stroke-opacity="0.08" stroke-width="1.5"/>
+    <circle cx="180" cy="960" r="90" stroke-opacity="0.1" stroke-width="1.5"/>
+  </g>
+
+  <!-- mirrored plate rings, top-right -->
+  <g stroke="#7c3aed" fill="none">
+    <circle cx="1780" cy="90" r="200" stroke-opacity="0.05" stroke-width="1.5"/>
+    <circle cx="1780" cy="90" r="130" stroke-opacity="0.07" stroke-width="1.5"/>
+  </g>
+
+  <!-- vignette to keep edges dark and focus center -->
+  <rect width="1920" height="1080" fill="url(#base)" opacity="0.001"/>
+  <radialGradient id="vignette" cx="50%" cy="45%" r="75%">
+    <stop offset="60%" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+  </radialGradient>
+  <rect width="1920" height="1080" fill="url(#vignette)"/>
+</svg>

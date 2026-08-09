@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
 import { calculateMacros, fetchActiveMacroTarget, fetchMacroHistory } from "../api/macros";
+import { Skeleton } from "../components/Skeleton";
 import { getChartTheme } from "../lib/chartTheme";
+import { toast } from "../store/toastStore";
 import { useThemeStore } from "../store/themeStore";
 import type { MacroGoal, MacroTarget } from "../types/macro";
 
@@ -23,6 +25,7 @@ export default function MacroCalculatorPage() {
   const [history, setHistory] = useState<MacroTarget[]>([]);
   const [goal, setGoal] = useState<MacroGoal>("maintain");
   const [weightOverride, setWeightOverride] = useState("");
+  const [pageLoading, setPageLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,7 +37,7 @@ export default function MacroCalculatorPage() {
   }
 
   useEffect(() => {
-    refresh();
+    refresh().finally(() => setPageLoading(false));
   }, []);
 
   async function handleCalculate() {
@@ -44,6 +47,7 @@ export default function MacroCalculatorPage() {
       const result = await calculateMacros(goal, weightOverride ? Number(weightOverride) : undefined);
       setActive(result);
       setHistory((prev) => [result, ...prev.map((t) => ({ ...t, is_active: false }))]);
+      toast.success("Macro targets updated");
     } catch (err) {
       const detail = isAxiosError<{ detail?: string }>(err) ? err.response?.data?.detail : undefined;
       setError(detail ?? "Failed to calculate. Please try again.");
@@ -58,7 +62,7 @@ export default function MacroCalculatorPage() {
   const totalKcal = proteinKcal + carbsKcal + fatKcal || 1;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
       <h1 className="mb-6 text-2xl font-semibold">Macro & Calorie Calculator</h1>
 
       <div className="mb-8 rounded-xl border border-line bg-surface p-4">
@@ -89,16 +93,19 @@ export default function MacroCalculatorPage() {
               id="weight-override"
               type="number"
               step="0.1"
-              placeholder="uses latest logged weight"
+              placeholder="e.g. 82.5"
               value={weightOverride}
               onChange={(e) => setWeightOverride(e.target.value)}
               className="w-56 rounded-md border border-line-strong bg-bg px-3 py-2 text-sm outline-none focus:border-accent"
             />
+            <p className="text-xs text-ink-muted">
+              Leave blank to use your latest logged weight.
+            </p>
           </div>
           <button
             onClick={handleCalculate}
             disabled={loading}
-            className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+            className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
           >
             {loading ? "Calculating..." : "Calculate"}
           </button>
@@ -106,7 +113,18 @@ export default function MacroCalculatorPage() {
         {error && <p className="mt-3 text-sm text-red-400">{error}</p>}
       </div>
 
-      {active && (
+      {pageLoading && (
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-line bg-surface p-4">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="mt-2 h-6 w-16" />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!pageLoading && active && (
         <>
           <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="rounded-xl border border-line bg-surface p-4">

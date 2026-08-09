@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import ToolResultCard from "./ToolResultCard";
 import type { ToolPayload } from "../types/chat";
@@ -46,28 +45,14 @@ describe("ToolResultCard", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("shows the tool label collapsed by default", () => {
+  it("renders the split plan directly, without needing a click to expand", () => {
     render(<ToolResultCard payload={splitPayload} />);
-    expect(screen.getByText("Generated a workout split")).toBeInTheDocument();
-    expect(screen.queryByText("Goblet Squat")).not.toBeInTheDocument();
-  });
-
-  it("expands to show split details on click", async () => {
-    const user = userEvent.setup();
-    render(<ToolResultCard payload={splitPayload} />);
-
-    await user.click(screen.getByText("Generated a workout split"));
-
-    expect(screen.getByText(/Goblet Squat/)).toBeInTheDocument();
     expect(screen.getByText("Day 1: Full Body")).toBeInTheDocument();
+    expect(screen.getByText("Goblet Squat")).toBeInTheDocument();
   });
 
-  it("expands to show macro details on click", async () => {
-    const user = userEvent.setup();
+  it("renders macro details directly", () => {
     render(<ToolResultCard payload={macroPayload} />);
-
-    await user.click(screen.getByText("Calculated macro targets"));
-
     expect(screen.getByText("Calories: 2259")).toBeInTheDocument();
     expect(screen.getByText("Protein: 176g")).toBeInTheDocument();
   });
