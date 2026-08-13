@@ -7,6 +7,7 @@ import jwt
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.concurrency import run_in_threadpool
 
 from app.api.deps import get_current_user
 from app.core.config import settings
@@ -235,7 +236,11 @@ async def change_password(
 async def google_auth(
     payload: GoogleAuthRequest, response: Response, db: AsyncSession = Depends(get_db)
 ) -> GoogleAuthResponse:
-    identity = verify_firebase_id_token(payload.id_token)
+    # verify_firebase_id_token is a synchronous call (it does a blocking
+    # HTTP request under the hood on a cache miss) — running it directly
+    # here would stall this single-worker process's event loop for every
+    # other in-flight request for the duration of that call.
+    identity = await run_in_threadpool(verify_firebase_id_token, payload.id_token)
 
     user = await db.scalar(select(User).where(User.firebase_uid == identity.uid))
     if user is None:

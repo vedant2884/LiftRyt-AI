@@ -37,7 +37,11 @@ httpx==0.28.1
 
 # Step 13: Google Sign-In — verifies Firebase ID tokens against Google's
 # public keys (google-auth), no Firebase Admin SDK / service account needed.
+# cachecontrol wraps the HTTP session so those signing certs are cached
+# instead of re-fetched on every single sign-in (see app/services/firebase_auth.py).
 google-auth==2.36.0
+requests==2.34.2
+cachecontrol==0.14.1
 
 # Avatar upload — python-multipart is FastAPI's required parser for
 # UploadFile/File(...) form bodies.

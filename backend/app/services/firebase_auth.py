@@ -10,6 +10,8 @@ service account JSON, no server-side Firebase project needed.
 import logging
 from dataclasses import dataclass
 
+import requests
+from cachecontrol import CacheControl
 from fastapi import HTTPException, status
 from google.auth.exceptions import GoogleAuthError
 from google.auth.transport import requests as google_requests
@@ -19,7 +21,14 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-_google_request = google_requests.Request()
+# verify_firebase_token re-fetches Google's public signing certs on every
+# single call by default — a live network round trip per sign-in, on top of
+# the actual verification. Google's cert endpoint already sends correct
+# Cache-Control headers (~1h+), so wrapping the session with CacheControl
+# (google-auth's own docs recommend exactly this) makes every verification
+# after the first one purely local. See google/oauth2/id_token.py's
+# verify_token() docstring.
+_google_request = google_requests.Request(session=CacheControl(requests.Session()))
 
 
 @dataclass
