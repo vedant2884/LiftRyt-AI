@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
   Bar,
@@ -63,7 +64,8 @@ function SectionHeading({ icon: Icon, title }: { icon: typeof Trophy; title: str
 }
 
 export default function WorkoutAnalysisPage() {
-  const mode = useThemeStore((s) => s.theme);
+  const reduceMotion = useReducedMotion();
+  const mode = useThemeStore((s) => s.resolvedTheme);
   const chart = getChartTheme(mode);
   const tooltipStyle = {
     background: chart.chartSurface,
@@ -371,9 +373,11 @@ export default function WorkoutAnalysisPage() {
                       <span className="text-ink-muted">{Math.round(row.volume_kg)} kg</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-surface-hover">
-                      <div
+                      <motion.div
                         className="h-full rounded-full bg-accent"
-                        style={{ width: `${(row.volume_kg / maxMuscleVolume) * 100}%` }}
+                        initial={reduceMotion ? undefined : { width: 0 }}
+                        animate={{ width: `${(row.volume_kg / maxMuscleVolume) * 100}%` }}
+                        transition={{ duration: 0.5, ease: "easeOut" }}
                       />
                     </div>
                   </div>

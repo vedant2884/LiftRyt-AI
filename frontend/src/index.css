@@ -15,6 +15,10 @@
   --color-ink-secondary: var(--ink-secondary);
   --color-ink-muted: var(--ink-muted);
   --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-emerald: var(--brand-emerald);
 }
 
 :root {
@@ -29,7 +33,24 @@
   --ink-secondary: #a3a3a3;
   --ink-muted: #737373;
 
-  --accent: #8b5cf6; /* violet — default accent */
+  --accent: #8b5cf6; /* violet — default accent, user-togglable (see [data-accent]) */
+  --on-accent: #ffffff; /* text/icon color on top of --accent, either accent value */
+
+  /* Success/progress token, independent of the user's accent choice — PRs,
+     completed sets, positive trends stay emerald even when the personal
+     accent is set to violet. */
+  --success: #10b981;
+
+  /* Fixed brand pair for the purple->emerald signature gradient (Coach
+     branding, focus glows) — deliberately NOT the same variable as --accent,
+     so it doesn't flip to emerald-on-emerald when the user's accent
+     preference is already emerald. */
+  --brand-purple: #8b5cf6;
+  --brand-emerald: #10b981;
+  --gradient-brand: linear-gradient(135deg, var(--brand-purple) 0%, var(--brand-emerald) 100%);
+
+  --shadow-elevated: 0 4px 24px -4px rgba(139, 92, 246, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 0 24px rgba(139, 92, 246, 0.18);
 
   color-scheme: dark;
 }
@@ -43,6 +64,14 @@
   --ink: #171717;
   --ink-secondary: #525252;
   --ink-muted: #737373;
+
+  /* emerald-600, not -500 — #10b981 fails AA contrast as text/icon color on
+     a white surface, #059669 passes. Gradient/glow tokens stay the -500
+     brand value (used as fills/backgrounds, not text, in both themes). */
+  --success: #059669;
+
+  --shadow-elevated: 0 4px 20px -4px rgba(23, 23, 23, 0.1), 0 2px 6px -2px rgba(23, 23, 23, 0.06);
+  --shadow-glow: 0 0 0 1px rgba(139, 92, 246, 0.35), 0 0 20px rgba(139, 92, 246, 0.12);
 
   color-scheme: light;
 }
@@ -58,6 +87,10 @@ body {
   min-height: 100svh;
   background: var(--bg);
   color: var(--ink);
+  /* Cross-fades bg/text color on a dark<->light switch instead of snapping
+     (no white/black flash). Neutralized automatically by the
+     prefers-reduced-motion block below, same as every other transition. */
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* Single global switch for every CSS-driven animation/transition (skeleton
@@ -83,6 +116,20 @@ body {
   }
   to {
     transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Coach "thinking" bubble's top accent bar — a slow, subtle opacity pulse
+   rather than movement, so it reads as "working" without being distracting.
+   Killed by the prefers-reduced-motion block above like every other
+   animation here. */
+@keyframes coach-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
     opacity: 1;
   }
 }

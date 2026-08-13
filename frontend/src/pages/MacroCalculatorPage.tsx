@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isAxiosError } from "axios";
+import { motion, useReducedMotion } from "framer-motion";
 import { calculateMacros, fetchActiveMacroTarget, fetchMacroHistory } from "../api/macros";
 import { Skeleton } from "../components/Skeleton";
 import { getChartTheme } from "../lib/chartTheme";
@@ -18,7 +19,8 @@ function formatDate(iso: string): string {
 }
 
 export default function MacroCalculatorPage() {
-  const mode = useThemeStore((s) => s.theme);
+  const reduceMotion = useReducedMotion();
+  const mode = useThemeStore((s) => s.resolvedTheme);
   const chart = getChartTheme(mode);
 
   const [active, setActive] = useState<MacroTarget | null>(null);
@@ -144,13 +146,24 @@ export default function MacroCalculatorPage() {
           <div className="mb-8 rounded-xl border border-line bg-surface p-4">
             <p className="mb-3 text-sm font-medium text-ink-secondary">Macro split</p>
             <div className="mb-3 flex h-4 overflow-hidden rounded-full">
-              <div
-                style={{ width: `${(proteinKcal / totalKcal) * 100}%`, background: chart.seriesBlue }}
+              <motion.div
+                initial={reduceMotion ? undefined : { width: 0 }}
+                animate={{ width: `${(proteinKcal / totalKcal) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                style={{ background: chart.seriesBlue }}
               />
-              <div
-                style={{ width: `${(carbsKcal / totalKcal) * 100}%`, background: chart.seriesOrange }}
+              <motion.div
+                initial={reduceMotion ? undefined : { width: 0 }}
+                animate={{ width: `${(carbsKcal / totalKcal) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 }}
+                style={{ background: chart.seriesOrange }}
               />
-              <div style={{ width: `${(fatKcal / totalKcal) * 100}%`, background: chart.seriesAqua }} />
+              <motion.div
+                initial={reduceMotion ? undefined : { width: 0 }}
+                animate={{ width: `${(fatKcal / totalKcal) * 100}%` }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+                style={{ background: chart.seriesAqua }}
+              />
             </div>
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="flex items-center gap-2">

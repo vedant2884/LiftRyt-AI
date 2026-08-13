@@ -27,7 +27,7 @@ function formatDate(iso: string): string {
 }
 
 export default function WeightPage() {
-  const mode = useThemeStore((s) => s.theme);
+  const mode = useThemeStore((s) => s.resolvedTheme);
   const chart = getChartTheme(mode);
   const tooltipStyle = {
     background: chart.chartSurface,

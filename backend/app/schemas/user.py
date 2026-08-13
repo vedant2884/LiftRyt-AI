@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.enums import ActivityLevel, DietaryPreference, ExperienceLevel, LengthUnit, Sex, WeightUnit
 
-ThemeMode = Literal["light", "dark"]
+ThemeMode = Literal["light", "dark", "system"]
 AccentColor = Literal["violet", "emerald"]
 
 # Shared between signup, profile updates, and Google-signup profile

@@ -1,7 +1,7 @@
 import { useToastStore } from "../store/toastStore";
 
 const VARIANT_CLASS: Record<string, string> = {
-  success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  success: "border-success/30 bg-success/10 text-success",
   error: "border-red-500/30 bg-red-500/10 text-red-400",
   info: "border-line-strong bg-surface text-ink",
 };

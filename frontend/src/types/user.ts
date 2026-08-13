@@ -4,7 +4,7 @@ export type ExperienceLevel = "beginner" | "intermediate" | "advanced";
 export type DietaryPreference = "none" | "vegetarian" | "vegan" | "pescatarian" | "keto" | "other";
 export type WeightUnit = "kg" | "lb";
 export type LengthUnit = "cm" | "in";
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = "light" | "dark" | "system";
 export type AccentColor = "violet" | "emerald";
 
 export interface UserProfile {

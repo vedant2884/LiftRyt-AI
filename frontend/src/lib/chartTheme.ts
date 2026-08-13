@@ -7,24 +7,6 @@ export type ChartMode = "light" | "dark";
 const SERIES_LIGHT = { blue: "#2a78d6", orange: "#eb6834", aqua: "#1baf7a" };
 const SERIES_DARK = { blue: "#3987e5", orange: "#d95926", aqua: "#199e70" };
 
-// Chrome matches this app's own surface/border/text tokens (index.css) so
-// charts blend into the surrounding cards instead of looking like a
-// separately-themed system bolted on.
-const CHROME_LIGHT = {
-  surface: "#ffffff",
-  gridline: "#e5e5e5",
-  axisLine: "#d4d4d4",
-  textMuted: "#737373",
-  textSecondary: "#525252",
-};
-const CHROME_DARK = {
-  surface: "#171717",
-  gridline: "#262626",
-  axisLine: "#404040",
-  textMuted: "#737373",
-  textSecondary: "#a3a3a3",
-};
-
 export interface ChartTheme {
   seriesBlue: string;
   seriesOrange: string;
@@ -36,17 +18,25 @@ export interface ChartTheme {
   textSecondary: string;
 }
 
+// Chrome reads the live --surface/--line/--line-strong/--ink-muted/
+// --ink-secondary custom properties straight off <html> instead of hand-
+// duplicating index.css's values here — those tokens are the single source
+// of truth (this used to be a second copy that had to be kept in sync by
+// hand whenever index.css changed).
+function readToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 export function getChartTheme(mode: ChartMode): ChartTheme {
   const series = mode === "light" ? SERIES_LIGHT : SERIES_DARK;
-  const chrome = mode === "light" ? CHROME_LIGHT : CHROME_DARK;
   return {
     seriesBlue: series.blue,
     seriesOrange: series.orange,
     seriesAqua: series.aqua,
-    chartSurface: chrome.surface,
-    gridline: chrome.gridline,
-    axisLine: chrome.axisLine,
-    textMuted: chrome.textMuted,
-    textSecondary: chrome.textSecondary,
+    chartSurface: readToken("--surface"),
+    gridline: readToken("--line"),
+    axisLine: readToken("--line-strong"),
+    textMuted: readToken("--ink-muted"),
+    textSecondary: readToken("--ink-secondary"),
   };
 }

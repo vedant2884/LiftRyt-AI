@@ -1,12 +1,22 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { applyFaviconTheme } from "../lib/favicon";
+import type { ThemeMode } from "../types/user";
 
-export type ThemeMode = "light" | "dark";
+export type { ThemeMode };
+export type ResolvedTheme = "light" | "dark";
 export type AccentColor = "violet" | "emerald";
+
+const systemQuery = () => window.matchMedia("(prefers-color-scheme: dark)");
+
+function resolveTheme(theme: ThemeMode): ResolvedTheme {
+  if (theme === "system") return systemQuery().matches ? "dark" : "light";
+  return theme;
+}
 
 interface ThemeState {
   theme: ThemeMode;
+  resolvedTheme: ResolvedTheme;
   accentColor: AccentColor;
   setTheme: (theme: ThemeMode) => void;
   setAccentColor: (accentColor: AccentColor) => void;
@@ -22,6 +32,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       theme: "dark",
+      resolvedTheme: "dark",
       accentColor: "violet",
       setTheme: (theme) => {
         set({ theme });
@@ -33,7 +44,9 @@ export const useThemeStore = create<ThemeState>()(
       },
       applyToDocument: () => {
         const { theme, accentColor } = get();
-        document.documentElement.setAttribute("data-theme", theme);
+        const resolved = resolveTheme(theme);
+        set({ resolvedTheme: resolved });
+        document.documentElement.setAttribute("data-theme", resolved);
         document.documentElement.setAttribute("data-accent", accentColor);
         applyFaviconTheme(accentColor);
       },
@@ -44,3 +57,18 @@ export const useThemeStore = create<ThemeState>()(
     },
   ),
 );
+
+// The store is a module-level singleton that outlives the page, so this
+// listener is attached exactly once at import time rather than from a
+// component effect (there's no natural unmount to tear it down from — the
+// only real-world "duplicate listener" case is Vite HMR during local dev,
+// not production). Re-applies live if the OS preference changes while
+// "system" is selected, so the app follows a live OS theme toggle without
+// needing a reload.
+if (typeof window !== "undefined") {
+  systemQuery().addEventListener("change", () => {
+    if (useThemeStore.getState().theme === "system") {
+      useThemeStore.getState().applyToDocument();
+    }
+  });
+}

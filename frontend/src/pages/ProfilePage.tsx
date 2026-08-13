@@ -1,5 +1,6 @@
 import { type ChangeEvent, type FormEvent, useRef, useState } from "react";
 import { isAxiosError } from "axios";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { changePassword, deleteAccount, updateProfile, uploadAvatarFile, type ProfileUpdatePayload } from "../api/auth";
 import { initials, resolveAvatarUrl } from "../lib/avatar";
@@ -379,17 +380,21 @@ export default function ProfilePage() {
 
           <p className="mb-2 text-xs text-ink-secondary">Mode</p>
           <div className="mb-5 inline-flex rounded-lg border border-line bg-bg p-1">
-            {(["dark", "light"] as ThemeMode[]).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => handleThemeChange(mode)}
-                className={`rounded-md px-4 py-1.5 text-sm capitalize transition ${
-                  theme === mode ? "bg-accent text-white" : "text-ink-secondary hover:text-ink"
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+            {(["dark", "light", "system"] as ThemeMode[]).map((mode) => {
+              const Icon = mode === "dark" ? Moon : mode === "light" ? Sun : Monitor;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => handleThemeChange(mode)}
+                  className={`inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm capitalize transition ${
+                    theme === mode ? "bg-accent text-on-accent" : "text-ink-secondary hover:text-ink"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" aria-hidden />
+                  {mode}
+                </button>
+              );
+            })}
           </div>
 
           <p className="mb-2 text-xs text-ink-secondary">Accent</p>

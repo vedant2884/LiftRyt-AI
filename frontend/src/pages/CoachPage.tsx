@@ -6,31 +6,16 @@ import {
   requestWeeklyCheckin,
   sendChatMessage,
 } from "../api/chat";
-import { DumbbellIcon } from "../components/icons";
-import DumbbellSpinner from "../components/DumbbellSpinner";
-import MarkdownMessage from "../components/MarkdownMessage";
+import { Badge } from "../components/Badge";
+import { Button } from "../components/Button";
+import CoachEmptyState from "../components/coach/CoachEmptyState";
+import CoachInput from "../components/coach/CoachInput";
+import CoachMessageBubble from "../components/coach/CoachMessageBubble";
+import CoachSidebar from "../components/coach/CoachSidebar";
+import CoachThinkingIndicator from "../components/coach/CoachThinkingIndicator";
 import { Skeleton } from "../components/Skeleton";
-import ToolResultCard from "../components/ToolResultCard";
 import { describeChatError } from "../lib/chatErrors";
 import type { ChatMessage, ChatSession } from "../types/chat";
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-}
-
-const SUGGESTED_PROMPTS = [
-  "How am I progressing?",
-  "Review my latest workout",
-  "What should I train today?",
-];
-
-function formatSessionDate(iso: string): string {
-  const date = new Date(iso);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  if (isToday) return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
 
 export default function CoachPage() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -138,67 +123,19 @@ export default function CoachPage() {
     }
   }
 
-  const sidebarContent = (
-    <>
-      <div className="p-3">
-        <button
-          onClick={startNewChat}
-          className="w-full rounded-md border border-line-strong px-3 py-2 text-sm font-medium transition hover:bg-surface-hover active:scale-[0.98]"
-        >
-          + New chat
-        </button>
-      </div>
-      <div className="flex-1 space-y-1 overflow-y-auto px-2 pb-2">
-        {sessionsLoading &&
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="px-2 py-2">
-              <Skeleton className="h-3.5 w-4/5" />
-              <Skeleton className="mt-1.5 h-2.5 w-1/3" />
-            </div>
-          ))}
-        {!sessionsLoading && sessions.length === 0 && (
-          <div className="flex flex-col items-center gap-2 px-2 py-6 text-center">
-            <DumbbellIcon className="h-5 w-5 text-ink-muted" />
-            <p className="text-xs text-ink-muted">No past conversations yet.</p>
-          </div>
-        )}
-        {!sessionsLoading &&
-          sessions.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => openSession(s.id)}
-              className={`block w-full truncate rounded-md px-2 py-2 text-left text-sm transition active:scale-[0.98] ${
-                s.id === activeSessionId
-                  ? "bg-surface-hover text-ink"
-                  : "text-ink-secondary hover:bg-surface-hover hover:text-ink"
-              }`}
-            >
-              <span className="block truncate">{s.title ?? "New chat"}</span>
-              <span className="block text-[10px] text-ink-muted">{formatSessionDate(s.updated_at)}</span>
-            </button>
-          ))}
-      </div>
-    </>
-  );
-
   return (
     <main className="mx-auto flex h-[calc(100svh-57px)] max-w-6xl gap-4 px-4 py-4 sm:px-6 sm:py-6">
       {/* Desktop: permanent left column. Mobile: slide-in drawer + backdrop,
           toggled by the "History" button next to the page title below. */}
-      <aside className="hidden w-64 shrink-0 flex-col rounded-xl border border-line bg-surface md:flex">
-        {sidebarContent}
-      </aside>
-
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col border-r border-line bg-surface transition-transform duration-200 md:hidden ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        {sidebarContent}
-      </aside>
+      <CoachSidebar
+        sessions={sessions}
+        sessionsLoading={sessionsLoading}
+        activeSessionId={activeSessionId}
+        mobileOpen={sidebarOpen}
+        onCloseMobile={() => setSidebarOpen(false)}
+        onNewChat={startNewChat}
+        onOpenSession={openSession}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="mb-4 flex items-center justify-between gap-2">
@@ -214,22 +151,21 @@ export default function CoachPage() {
               </svg>
             </button>
             <div className="min-w-0">
-              <h1 className="text-2xl font-semibold">AI Coach</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-semibold">Gym AI Coach</h1>
+                <Badge variant="beta">Beta</Badge>
+              </div>
               <p className="hidden text-sm text-ink-muted sm:block">
                 Grounded in your logged weight and macro targets, not generic advice.
               </p>
             </div>
           </div>
-          <button
-            onClick={handleWeeklyCheckin}
-            disabled={sending}
-            className="shrink-0 rounded-md border border-line-strong px-3 py-1.5 text-sm transition hover:bg-surface-hover active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
-          >
+          <Button variant="secondary" onClick={handleWeeklyCheckin} disabled={sending} className="shrink-0 py-1.5">
             Weekly check-in
-          </button>
+          </Button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto rounded-xl border border-line bg-surface p-4">
+        <div className="flex-1 space-y-5 overflow-y-auto rounded-xl border border-line bg-surface p-4">
           {loadingSession && (
             <div className="space-y-4">
               <div className="flex justify-end">
@@ -241,105 +177,18 @@ export default function CoachPage() {
             </div>
           )}
           {!loadingSession && messages.length === 0 && (
-            <div className="mx-auto flex max-w-md flex-col items-center gap-6 py-10 text-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-1.5 rounded-full border border-line-strong px-3 py-1">
-                  <DumbbellIcon className="h-3 w-3 text-accent" />
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-secondary">
-                    Your Coach
-                  </span>
-                </div>
-                <h2 className="text-xl font-semibold text-ink">Your training, your data, your coach.</h2>
-                <p className="text-sm text-ink-muted">
-                  Ask about your workouts, progress, macros, or next session.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => inputRef.current?.focus()}
-                className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97]"
-              >
-                Start a conversation
-              </button>
-
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {SUGGESTED_PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => {
-                      setInput(prompt);
-                      inputRef.current?.focus();
-                    }}
-                    className="rounded-full border border-line-strong px-3 py-1.5 text-xs text-ink-secondary transition hover:border-accent/50 hover:text-ink"
-                  >
-                    {prompt}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <CoachEmptyState onStartConversation={() => inputRef.current?.focus()} />
           )}
-          {!loadingSession &&
-            messages.map((m) => (
-              <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[85%] rounded-xl px-4 py-2 text-sm ${
-                    m.role === "user"
-                      ? "bg-accent text-white"
-                      : "border border-line bg-bg text-ink"
-                  }`}
-                >
-                  {m.role === "user" ? (
-                    <p className="whitespace-pre-wrap">{m.content}</p>
-                  ) : (
-                    <>
-                      {m.tool_payload && (
-                        <>
-                          <ToolResultCard payload={m.tool_payload} />
-                          <div className="my-3 border-t border-line" />
-                        </>
-                      )}
-                      <MarkdownMessage content={m.content} />
-                    </>
-                  )}
-                  <p
-                    className={`mt-1 text-[10px] ${m.role === "user" ? "text-white/70" : "text-ink-muted"}`}
-                  >
-                    {formatTime(m.created_at)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          {sending && (
-            <div className="flex justify-start">
-              <div className="rounded-xl border border-line bg-bg px-4 py-3">
-                <DumbbellSpinner label="Thinking..." />
-              </div>
-            </div>
-          )}
+          {!loadingSession && messages.map((m) => <CoachMessageBubble key={m.id} message={m} />)}
+          {sending && <CoachThinkingIndicator />}
           <div ref={bottomRef} />
         </div>
 
         {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
 
-        <form onSubmit={handleSend} className="mt-4 flex gap-3">
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask your coach anything..."
-            disabled={sending}
-            className="flex-1 rounded-md border border-line-strong bg-surface px-4 py-2 text-sm outline-none focus:border-accent disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={sending || !input.trim()}
-            className="rounded-md bg-accent px-5 py-2 text-sm font-medium text-white transition hover:opacity-90 active:scale-[0.97] disabled:opacity-50 disabled:active:scale-100"
-          >
-            Send
-          </button>
-        </form>
+        <div className="mt-4">
+          <CoachInput ref={inputRef} value={input} onChange={setInput} onSubmit={handleSend} disabled={sending} />
+        </div>
         <p className="mt-2 text-center text-[11px] text-ink-muted">
           LiftRyt AI can make mistakes. Check important info before relying on it.
         </p>
