@@ -62,13 +62,13 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
-    # Provider-agnostic LLM layer: Groq (free tier, fast, primary) and Ollama
-    # (local, no account needed, dev-mode fallback) both expose an
+    # Provider-agnostic LLM layer: OpenRouter (free-tier model, primary) and
+    # Ollama (local, no account needed, dev-mode fallback) both expose an
     # OpenAI-compatible chat completions API, so switching providers is this
     # one setting, not a rewritten client — see app/services/llm/provider.py.
-    llm_provider: str = "groq"  # "groq" | "ollama"
-    groq_api_key: str = ""
-    groq_model: str = "llama-3.3-70b-versatile"
+    llm_provider: str = "openrouter"  # "openrouter" | "ollama"
+    openrouter_api_key: str = ""
+    openrouter_model: str = "liquid/lfm-2.5-2.6b:free"
     # host.docker.internal resolves to the host machine from inside the
     # backend container — the right default for a natively-installed Ollama.
     ollama_base_url: str = "http://host.docker.internal:11434"

@@ -70,11 +70,11 @@ services:
         value: "7"
 
       - key: LLM_PROVIDER
-        value: groq
-      - key: GROQ_API_KEY
+        value: openrouter
+      - key: OPENROUTER_API_KEY
         sync: false
-      - key: GROQ_MODEL
-        value: llama-3.3-70b-versatile
+      - key: OPENROUTER_MODEL
+        value: liquid/lfm-2.5-2.6b:free
 
       - key: FIREBASE_PROJECT_ID
         value: liftryt-ai

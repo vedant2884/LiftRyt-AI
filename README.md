@@ -13,7 +13,7 @@ macro/calorie calculators.
 | Backend  | Python, FastAPI (async), Pydantic v2, SQLAlchemy 2.0, Alembic    |
 | Database | PostgreSQL + pgvector                                            |
 | Cache    | Redis                                                             |
-| LLM      | Groq (free tier, primary) with local Ollama as a dev-mode fallback — swapped via `LLM_PROVIDER` |
+| LLM      | OpenRouter (free-tier model, primary) with local Ollama as a dev-mode fallback — swapped via `LLM_PROVIDER` |
 | Auth     | JWT (access + refresh), bcrypt password hashing                  |
 
 ## Project structure
@@ -199,16 +199,16 @@ model never generates a workout split or estimates macro numbers itself —
 tools it calls, so its answers are grounded in the same deterministic logic
 those features already use.
 
-**Provider abstraction:** Groq and Ollama both expose an OpenAI-compatible
+**Provider abstraction:** OpenRouter and Ollama both expose an OpenAI-compatible
 chat-completions API (including tool calling), so
 `backend/app/services/llm/provider.py` returns the same client pointed at a
 different `base_url`/model — set in `backend/.env`:
 
 ```bash
-# Groq (default) — free tier, fast, needs a key from console.groq.com
-LLM_PROVIDER=groq
-GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.3-70b-versatile
+# OpenRouter (default) — free-tier model, needs a key from openrouter.ai/keys
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=liquid/lfm-2.5-2.6b:free
 
 # Ollama — fully local, no account. Either install it natively (the default
 # OLLAMA_BASE_URL=http://host.docker.internal:11434 already points at that),

@@ -26,7 +26,7 @@ torch==2.5.1
 sentence-transformers==3.3.1
 pgvector==0.3.6
 
-# Step 10: AI coach — Groq and Ollama both speak the OpenAI-compatible
+# Step 10: AI coach — OpenRouter and Ollama both speak the OpenAI-compatible
 # chat-completions/tool-calling API, so one client library covers both.
 openai==1.59.6
 

@@ -51,7 +51,7 @@ services:
   # Optional local LLM provider — opt-in via `docker compose --profile ollama up`
   # so the default `docker compose up` stays fast and doesn't force a multi-GB
   # model download on everyone. Set LLM_PROVIDER=ollama and
-  # OLLAMA_BASE_URL=http://ollama:11434 in backend/.env to use it instead of Groq.
+  # OLLAMA_BASE_URL=http://ollama:11434 in backend/.env to use it instead of OpenRouter.
   ollama:
     image: ollama/ollama
     profiles: ["ollama"]

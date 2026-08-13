@@ -1,6 +1,6 @@
 """Provider-agnostic LLM client.
 
-Groq and Ollama both expose an OpenAI-compatible chat-completions API
+OpenRouter and Ollama both expose an OpenAI-compatible chat-completions API
 (including tool calling), so instead of writing a bespoke client per
 provider, this returns the same AsyncOpenAI client pointed at a different
 base_url/model. Swapping providers is the LLM_PROVIDER env var, not a
@@ -24,10 +24,16 @@ def get_llm_client() -> AsyncOpenAI:
     if settings.llm_provider == "ollama":
         # Ollama doesn't check the key, but the client requires a non-empty string.
         return AsyncOpenAI(api_key="ollama", base_url=f"{settings.ollama_base_url}/v1")
-    return AsyncOpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+    # OpenRouter's own docs recommend these attribution headers; harmless
+    # to include, never required for the request to succeed.
+    return AsyncOpenAI(
+        api_key=settings.openrouter_api_key,
+        base_url="https://openrouter.ai/api/v1",
+        default_headers={"HTTP-Referer": settings.frontend_url, "X-Title": settings.app_name},
+    )
 
 
 def get_llm_model() -> str:
     if settings.llm_provider == "ollama":
         return settings.ollama_model
-    return settings.groq_model
+    return settings.openrouter_model
