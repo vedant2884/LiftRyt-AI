@@ -15,7 +15,7 @@ from app.models.chat_session import ChatSession
 from app.models.enums import ChatRole
 from app.models.user import User
 from app.services import weight_analytics, workout_analytics
-from app.services.llm.provider import LLMProviderError, get_llm_client, get_llm_model
+from app.services.llm.provider import LLMProviderError, create_chat_completion, get_llm_client
 from app.services.macro_target_service import resolve_weight_kg
 from app.services.streaks_service import get_weekly_adherence
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,11 +64,10 @@ async def generate_weekly_checkin(db: AsyncSession, user: User, session: ChatSes
     prompt = CHECKIN_PROMPT_TEMPLATE.format(data="\n".join(data_lines))
 
     client = get_llm_client()
-    model = get_llm_model()
     try:
-        response = await client.chat.completions.create(
-            model=model, messages=[{"role": "user", "content": prompt}]
-        )
+        response = await create_chat_completion(client, messages=[{"role": "user", "content": prompt}])
+    except LLMProviderError:
+        raise
     except Exception as exc:
         raise LLMProviderError(f"LLM request failed: {exc}") from exc
 

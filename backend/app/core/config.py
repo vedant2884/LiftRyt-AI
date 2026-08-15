@@ -68,7 +68,18 @@ class Settings(BaseSettings):
     # one setting, not a rewritten client — see app/services/llm/provider.py.
     llm_provider: str = "openrouter"  # "openrouter" | "ollama"
     openrouter_api_key: str = ""
-    openrouter_model: str = "liquid/lfm-2.5-2.6b:free"
+    # gemma is primary rather than liquid because liquid's endpoint forces
+    # reasoning mode on (confirmed via OpenRouter — "Reasoning is mandatory
+    # for this endpoint and cannot be disabled") and burns 500-700+ reasoning
+    # tokens even on trivial prompts, which routinely blew past the app's
+    # response-time budget. gemma has no such restriction.
+    openrouter_model: str = "google/gemma-4-31b-it:free"
+    # Tried in order after openrouter_model on failure (rate limit, temporary
+    # outage, etc) — OpenRouter's free-tier models are the least reliable
+    # part of this stack, so a single alternate model is cheap insurance.
+    # liquid is still usable as a last resort, just slower. Empty string
+    # disables the fallback.
+    openrouter_fallback_model: str = "liquid/lfm-2.5-2.6b:free"
     # host.docker.internal resolves to the host machine from inside the
     # backend container — the right default for a natively-installed Ollama.
     ollama_base_url: str = "http://host.docker.internal:11434"

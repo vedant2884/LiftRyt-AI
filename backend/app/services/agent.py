@@ -25,7 +25,7 @@ from app.schemas.chat import ExerciseChatContext
 from app.services.agent_tools import TOOL_DEFINITIONS, execute_tool
 from app.services.coach_context import build_context
 from app.services.embeddings import embed_text
-from app.services.llm.provider import LLMProviderError, get_llm_client, get_llm_model
+from app.services.llm.provider import LLMProviderError, create_chat_completion, get_llm_client
 
 # How many recent turns of conversation ride along as context. Kept small —
 # this is a chat-completions API with no prompt caching across turns, so
@@ -118,12 +118,13 @@ async def run_agent(
     )
 
     client = get_llm_client()
-    model = get_llm_model()
 
     try:
-        response = await client.chat.completions.create(
-            model=model, messages=messages, tools=TOOL_DEFINITIONS, tool_choice="auto"
+        response = await create_chat_completion(
+            client, messages=messages, tools=TOOL_DEFINITIONS, tool_choice="auto"
         )
+    except LLMProviderError:
+        raise
     except Exception as exc:
         raise LLMProviderError(f"LLM request failed: {exc}") from exc
 
@@ -153,7 +154,9 @@ async def run_agent(
         )
 
         try:
-            follow_up = await client.chat.completions.create(model=model, messages=messages)
+            follow_up = await create_chat_completion(client, messages=messages)
+        except LLMProviderError:
+            raise
         except Exception as exc:
             raise LLMProviderError(f"LLM follow-up request failed: {exc}") from exc
         final_content = follow_up.choices[0].message.content
