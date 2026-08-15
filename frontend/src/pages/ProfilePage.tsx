@@ -328,6 +328,8 @@ export default function ProfilePage() {
                 <input
                   id="goal_weight_kg"
                   type="number"
+                  inputMode="decimal"
+                  step="0.1"
                   min={1}
                   max={500}
                   value={goalWeightDraft}

@@ -144,6 +144,8 @@ export default function GoogleCompleteProfilePage() {
             <input
               id="starting_weight_kg"
               type="number"
+              inputMode="decimal"
+              step="0.1"
               min={1}
               max={500}
               value={startingWeightKg}
@@ -155,6 +157,8 @@ export default function GoogleCompleteProfilePage() {
             <input
               id="goal_weight_kg"
               type="number"
+              inputMode="decimal"
+              step="0.1"
               required
               min={1}
               max={500}

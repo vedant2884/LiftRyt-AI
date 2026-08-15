@@ -151,6 +151,8 @@ export default function OnboardingPage() {
               </div>
               <input
                 type="number"
+                inputMode="decimal"
+                step="0.1"
                 min={1}
                 max={500}
                 value={goalWeight}
