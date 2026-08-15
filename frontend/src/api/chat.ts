@@ -27,8 +27,3 @@ export async function sendChatMessage(
   });
   return res.data;
 }
-
-export async function requestWeeklyCheckin(sessionId: string): Promise<ChatMessage> {
-  const res = await api.post<ChatMessage>(`/chat/sessions/${sessionId}/weekly-checkin`);
-  return res.data;
-}

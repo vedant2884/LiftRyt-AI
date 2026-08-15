@@ -1,13 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
-import {
-  createChatSession,
-  fetchChatSessions,
-  fetchSessionMessages,
-  requestWeeklyCheckin,
-  sendChatMessage,
-} from "../api/chat";
+import { createChatSession, fetchChatSessions, fetchSessionMessages, sendChatMessage } from "../api/chat";
 import { Badge } from "../components/Badge";
-import { Button } from "../components/Button";
 import CoachEmptyState from "../components/coach/CoachEmptyState";
 import CoachInput from "../components/coach/CoachInput";
 import CoachMessageBubble from "../components/coach/CoachMessageBubble";
@@ -108,21 +101,6 @@ export default function CoachPage() {
     }
   }
 
-  async function handleWeeklyCheckin() {
-    setError(null);
-    setSending(true);
-    try {
-      const sessionId = await ensureSession();
-      const message = await requestWeeklyCheckin(sessionId);
-      setMessages((prev) => [...prev, message]);
-      fetchChatSessions().then(setSessions);
-    } catch (err) {
-      setError(describeChatError(err, "Couldn't generate a check-in right now."));
-    } finally {
-      setSending(false);
-    }
-  }
-
   return (
     <main className="mx-auto flex h-[calc(100svh-57px)] max-w-6xl gap-4 px-4 py-4 sm:px-6 sm:py-6">
       {/* Desktop: permanent left column. Mobile: slide-in drawer + backdrop,
@@ -138,31 +116,26 @@ export default function CoachPage() {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(true)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line-strong transition hover:bg-surface-hover active:scale-[0.97] md:hidden"
-              aria-label="Chat history"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-            </button>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold">Gym AI Coach</h1>
-                <Badge variant="beta">Beta</Badge>
-              </div>
-              <p className="hidden text-sm text-ink-muted sm:block">
-                Grounded in your logged weight and macro targets, not generic advice.
-              </p>
+        <div className="mb-4 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-line-strong transition hover:bg-surface-hover active:scale-[0.97] md:hidden"
+            aria-label="Chat history"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-semibold">Gym AI Coach</h1>
+              <Badge variant="beta">Beta</Badge>
             </div>
+            <p className="hidden text-sm text-ink-muted sm:block">
+              Grounded in your logged weight and macro targets, not generic advice.
+            </p>
           </div>
-          <Button variant="secondary" onClick={handleWeeklyCheckin} disabled={sending} className="shrink-0 py-1.5">
-            Weekly check-in
-          </Button>
         </div>
 
         <div className="flex-1 space-y-5 overflow-y-auto rounded-xl border border-line bg-surface p-4">
