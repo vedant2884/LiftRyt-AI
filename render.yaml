@@ -74,6 +74,8 @@ services:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: OPENROUTER_MODEL
+        value: google/gemma-4-31b-it:free
+      - key: OPENROUTER_FALLBACK_MODEL
         value: liquid/lfm-2.5-2.6b:free
 
       - key: FIREBASE_PROJECT_ID
