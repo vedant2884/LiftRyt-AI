@@ -34,6 +34,13 @@ export interface ChatMessage {
   created_at: string;
 }
 
+/** Both halves of a turn — the user's message needs its real persisted id
+ * (not just the reply), or it can never later be the target of an edit. */
+export interface SendMessageResult {
+  user_message: ChatMessage;
+  assistant_message: ChatMessage;
+}
+
 /** Sent alongside a message from the exercise detail modal's "Ask Coach"
  * box so the coach knows which exercise is open without the user typing
  * its name. Mirrors app.schemas.chat.ExerciseChatContext. */

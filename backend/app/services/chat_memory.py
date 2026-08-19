@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_message import ChatMessage
 from app.models.enums import ChatRole
-from app.services.embeddings import embed_text
+from app.services.embeddings import embed_text_async
 
 RELEVANT_MEMORY_COUNT = 3
 
@@ -24,7 +24,7 @@ RELEVANT_MEMORY_COUNT = 3
 async def find_relevant_past_messages(
     db: AsyncSession, user_id: uuid.UUID, current_session_id: uuid.UUID, query: str
 ) -> list[ChatMessage]:
-    query_vector = embed_text(query)
+    query_vector = await embed_text_async(query)
     stmt = (
         select(ChatMessage)
         .where(

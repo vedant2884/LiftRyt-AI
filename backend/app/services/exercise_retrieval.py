@@ -11,11 +11,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.exercise import Exercise
-from app.services.embeddings import embed_text
+from app.services.embeddings import embed_text_async
 
 
 async def semantic_search_exercises(db: AsyncSession, query: str, limit: int = 10) -> list[Exercise]:
-    query_vector = embed_text(query)
+    query_vector = await embed_text_async(query)
     # cosine_distance compiles to pgvector's <=> operator: 0 = identical
     # direction, 2 = opposite. Ordering ascending puts nearest-meaning
     # matches first; the HNSW index from this step's migration makes this

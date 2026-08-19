@@ -7,6 +7,7 @@ summaries: a handful per user), while still being a genuinely strong
 general-purpose sentence embedding model.
 """
 
+import asyncio
 from functools import lru_cache
 
 from sentence_transformers import SentenceTransformer
@@ -35,3 +36,14 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     # comparator a meaningful similarity measure here.
     vectors = model.encode(texts, normalize_embeddings=True)
     return vectors.tolist()
+
+
+async def embed_text_async(text: str) -> list[float]:
+    """CPU-bound (a local sentence-transformers forward pass, no network
+    call), so calling embed_text() directly from async code blocks the
+    entire event loop for its duration — every other in-flight request
+    stalls until it's done. Every actual call site in the coach's request
+    path (agent.py, exercise_retrieval.py, chat_memory.py) should go
+    through this instead, which runs it in a worker thread so the loop
+    stays free."""
+    return await asyncio.to_thread(embed_text, text)

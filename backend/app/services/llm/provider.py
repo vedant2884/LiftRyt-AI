@@ -53,12 +53,21 @@ def get_llm_models() -> list[str]:
 async def create_chat_completion(client: AsyncOpenAI, **kwargs):
     """chat.completions.create, retrying against each configured fallback
     model in turn if the current one errors. Raises LLMProviderError only
-    once every model in the list has failed."""
+    once every model in the list has failed.
+
+    Also treats a response with no usable choice as a failure worth falling
+    back on, not just a raised exception — OpenRouter's free-tier models
+    sometimes return a 200 with `choices: null` (a malformed body, not a
+    normal error the SDK raises for) instead of a real completion, which
+    would otherwise be silently accepted as "success" and crash whatever
+    tries to read response.choices[0] afterward."""
     models = get_llm_models()
     last_exc: Exception | None = None
     for index, model in enumerate(models):
         try:
             response = await client.chat.completions.create(model=model, **kwargs)
+            if not response.choices:
+                raise LLMProviderError(f"{model} returned no choices (malformed response: {response!r})")
             if index > 0:
                 logger.warning("LLM primary model failed, fell back to %s", model)
             return response
@@ -66,3 +75,40 @@ async def create_chat_completion(client: AsyncOpenAI, **kwargs):
             last_exc = exc
             continue
     raise LLMProviderError(f"All LLM models failed ({', '.join(models)}): {last_exc}") from last_exc
+
+
+async def stream_chat_completion(client: AsyncOpenAI, **kwargs):
+    """Same fallback-model retry as create_chat_completion, but for
+    streaming — returns an async generator of ChatCompletionChunk. A
+    streaming request can fail either immediately (bad request, instant
+    429) or only once you start actually consuming it, so this pulls the
+    *first* chunk from each model before committing to it. Once a model
+    yields a real first chunk every remaining chunk comes from that same
+    stream — there's no falling back mid-stream, since a partial reply
+    from one model can't be resumed by a different one."""
+    models = get_llm_models()
+    last_exc: Exception | None = None
+    for index, model in enumerate(models):
+        try:
+            stream = await client.chat.completions.create(model=model, stream=True, **kwargs)
+            stream_iter = stream.__aiter__()
+            first_chunk = await stream_iter.__anext__()
+        except StopAsyncIteration:
+            last_exc = LLMProviderError(f"{model} returned an empty stream")
+            continue
+        except Exception as exc:
+            last_exc = exc
+            continue
+
+        if index > 0:
+            logger.warning("LLM primary model failed, fell back to %s (streaming)", model)
+
+        async def _chunks(first_chunk=first_chunk, stream_iter=stream_iter):
+            yield first_chunk
+            async for chunk in stream_iter:
+                yield chunk
+
+        return _chunks()
+    raise LLMProviderError(
+        f"All LLM models failed to start a stream ({', '.join(models)}): {last_exc}"
+    ) from last_exc

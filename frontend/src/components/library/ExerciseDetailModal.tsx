@@ -149,7 +149,7 @@ export default function ExerciseDetailModal({
     setAskError(null);
     try {
       const sessionId = await ensureCoachSession();
-      const reply = await sendChatMessage(sessionId, content, {
+      const { assistant_message } = await sendChatMessage(sessionId, content, {
         name: exercise.name,
         primary_muscles: exercise.primary_muscles,
         secondary_muscles: exercise.secondary_muscles,
@@ -157,7 +157,7 @@ export default function ExerciseDetailModal({
         category: exercise.category,
         difficulty: exercise.difficulty,
       });
-      setThread((prev) => [...prev, { question: content, answer: reply.content }]);
+      setThread((prev) => [...prev, { question: content, answer: assistant_message.content }]);
       setAskInput("");
     } catch (err) {
       setAskError(describeChatError(err, "Couldn't reach the coach. Please try again."));

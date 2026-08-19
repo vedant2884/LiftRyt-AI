@@ -93,6 +93,23 @@ body {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
+/* Devanagari-aware type stack for AI Coach chat bubbles (Hindi/Marathi
+   replies and user messages) — explicit system-font fallbacks rather than
+   relying on silent OS substitution, plus a taller line-height, since
+   Devanagari glyphs need more vertical room than Latin at the same
+   font-size and mixed Latin+Devanagari lines look cramped at the default.
+   Scoped to chat content only; doesn't touch the rest of the app's type. */
+.chat-prose {
+  font-family:
+    "Noto Sans Devanagari",
+    "Nirmala UI",
+    "Mangal",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+  line-height: 1.7;
+}
+
 /* Single global switch for every CSS-driven animation/transition (skeleton
    pulse, toast slide-in, button hover/active transitions, ...) so nothing
    needs its own per-component media query. Framer Motion animations (page
