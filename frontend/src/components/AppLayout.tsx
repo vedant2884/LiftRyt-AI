@@ -8,7 +8,6 @@ import {
   Library,
   Menu,
   MessageCircle,
-  PieChart,
   Scale,
   X,
 } from "lucide-react";
@@ -30,7 +29,6 @@ const NAV_LINKS = [
   { to: "/coach", label: "Coach", icon: MessageCircle },
   { to: "/weight", label: "Weight", icon: Scale },
   { to: "/library", label: "Library", icon: Library },
-  { to: "/macros", label: "Macros", icon: PieChart },
   { to: "/splits", label: "Splits", icon: CalendarDays },
 ];
 

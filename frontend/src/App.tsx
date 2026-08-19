@@ -21,7 +21,6 @@ import FavoriteExercisesPage from "./pages/library/FavoriteExercisesPage";
 import CustomExercisesPage from "./pages/library/CustomExercisesPage";
 import AiRecommendationsPage from "./pages/library/AiRecommendationsPage";
 import WeightPage from "./pages/WeightPage";
-import MacroCalculatorPage from "./pages/MacroCalculatorPage";
 import SplitGeneratorPage from "./pages/SplitGeneratorPage";
 import CoachPage from "./pages/CoachPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -86,7 +85,6 @@ function App() {
               <Route path="custom" element={<CustomExercisesPage />} />
               <Route path="recommendations" element={<AiRecommendationsPage />} />
             </Route>
-            <Route path="/macros" element={<MacroCalculatorPage />} />
             <Route path="/splits" element={<SplitGeneratorPage />} />
             <Route path="/coach" element={<CoachPage />} />
             <Route path="/profile" element={<ProfilePage />} />
