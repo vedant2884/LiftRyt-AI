@@ -25,6 +25,9 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
+  const [workoutRemindersEnabled, setWorkoutRemindersEnabled] = useState(
+    user?.workout_reminders_enabled ?? true,
+  );
   const [unitWeight, setUnitWeight] = useState<WeightUnit>(user?.unit_weight ?? "kg");
   const [unitLength, setUnitLength] = useState<LengthUnit>(user?.unit_length ?? "cm");
   const [increment, setIncrement] = useState(user?.default_progression_increment_kg ?? 2.5);
@@ -192,6 +195,11 @@ export default function ProfilePage() {
   function handleUnitLengthChange(unit: LengthUnit) {
     setUnitLength(unit);
     persist({ unit_length: unit });
+  }
+
+  function handleWorkoutRemindersChange(enabled: boolean) {
+    setWorkoutRemindersEnabled(enabled);
+    persist({ workout_reminders_enabled: enabled });
   }
 
   function handleIncrementSelectChange(value: string) {
@@ -417,6 +425,37 @@ export default function ProfilePage() {
                 {a.label}
               </button>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-line bg-surface p-5">
+          <h2 className="mb-1 font-medium">Notifications</h2>
+          <p className="mb-4 text-sm text-ink-muted">
+            Occasional, behavior-based nudges — a streak reminder, a gentle check-in if you usually
+            train today. Never more than one at a time.
+          </p>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Workout reminders</span>
+            <div className="inline-flex rounded-lg border border-line bg-bg p-1">
+              <button
+                type="button"
+                onClick={() => handleWorkoutRemindersChange(true)}
+                className={`rounded-md px-4 py-1.5 text-sm transition ${
+                  workoutRemindersEnabled ? "bg-accent text-on-accent" : "text-ink-secondary hover:text-ink"
+                }`}
+              >
+                On
+              </button>
+              <button
+                type="button"
+                onClick={() => handleWorkoutRemindersChange(false)}
+                className={`rounded-md px-4 py-1.5 text-sm transition ${
+                  !workoutRemindersEnabled ? "bg-accent text-on-accent" : "text-ink-secondary hover:text-ink"
+                }`}
+              >
+                Off
+              </button>
+            </div>
           </div>
         </section>
 

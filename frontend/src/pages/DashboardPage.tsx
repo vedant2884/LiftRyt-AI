@@ -4,6 +4,7 @@ import { Dumbbell, Play } from "lucide-react";
 import { listWorkouts } from "../api/workouts";
 import { useActiveWorkoutStore } from "../store/activeWorkoutStore";
 import { useAuthStore } from "../store/authStore";
+import NotificationBanner from "../components/NotificationBanner";
 import StreaksCards from "../components/StreaksCards";
 import WeightTrendCard from "../components/WeightTrendCard";
 import { formatHeight, formatWeight } from "../lib/units";
@@ -35,6 +36,8 @@ export default function DashboardPage() {
     <main className="px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-2xl space-y-4">
         <h1 className="mb-2 text-2xl font-semibold">Welcome, {user.full_name}</h1>
+
+        <NotificationBanner />
 
         <Link
           to={workoutInProgress ? "/workouts/active" : "/workouts"}

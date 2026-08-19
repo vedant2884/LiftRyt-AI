@@ -9,6 +9,7 @@ from app.api.routers import (
     exercises,
     favorites,
     macros,
+    notifications,
     progressions,
     recommendations,
     splits,
@@ -53,6 +54,7 @@ app.include_router(splits.router)
 app.include_router(streaks.router)
 app.include_router(recommendations.router)
 app.include_router(chat.router)
+app.include_router(notifications.router)
 
 
 @app.get("/health")

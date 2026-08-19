@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,6 +14,7 @@ from app.models.user import User
 from app.models.workout import Workout
 from app.models.workout_set import WorkoutSet
 from app.schemas.workout import (
+    CalendarDayOut,
     ExerciseProgressionStats,
     MuscleVolume,
     PersonalRecord,
@@ -147,6 +148,23 @@ async def get_workout_overview(
     week_start = start_of_week(now)
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     return await workout_analytics.get_workout_overview(db, current_user.id, week_start, month_start)
+
+
+@router.get("/analysis/calendar", response_model=list[CalendarDayOut])
+async def get_activity_calendar(
+    year: int = Query(ge=1900, le=2100),
+    month: int = Query(ge=1, le=12),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[CalendarDayOut]:
+    """One month of activity at a time (not the user's whole history) —
+    matches how the frontend calendar navigates, and keeps the query and
+    payload bounded regardless of how long someone's been using the app."""
+    month_start = datetime(year, month, 1, tzinfo=timezone.utc)
+    month_end = datetime(year + 1, 1, 1, tzinfo=timezone.utc) if month == 12 else datetime(
+        year, month + 1, 1, tzinfo=timezone.utc
+    )
+    return await workout_analytics.get_activity_calendar(db, current_user.id, month_start, month_end)
 
 
 @router.get("/analysis/progression/{exercise_id}", response_model=ExerciseProgressionStats)

@@ -5,9 +5,9 @@ import { googleCompleteProfile } from "../api/auth";
 import { useAuthStore } from "../store/authStore";
 import { useThemeStore } from "../store/themeStore";
 import { FormField, inputClass } from "../components/FormField";
+import { Select } from "../components/Select";
+import { calculateAge, MAX_DATE_OF_BIRTH } from "../lib/age";
 import type { ActivityLevel, DietaryPreference, ExperienceLevel, Sex } from "../types/user";
-
-const selectClass = inputClass;
 
 interface LocationState {
   google_token: string;
@@ -23,7 +23,7 @@ export default function GoogleCompleteProfilePage() {
   const state = location.state as LocationState | null;
 
   const [username, setUsername] = useState("");
-  const [age, setAge] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [sex, setSex] = useState<Sex>("male");
   const [heightCm, setHeightCm] = useState("");
   const [startingWeightKg, setStartingWeightKg] = useState("");
@@ -49,7 +49,7 @@ export default function GoogleCompleteProfilePage() {
       const { access_token, user } = await googleCompleteProfile({
         google_token: state!.google_token,
         username,
-        age: Number(age),
+        date_of_birth: dateOfBirth,
         sex,
         height_cm: Number(heightCm),
         starting_weight_kg: startingWeightKg ? Number(startingWeightKg) : undefined,
@@ -101,29 +101,26 @@ export default function GoogleCompleteProfilePage() {
         </FormField>
 
         <div className="grid grid-cols-3 gap-4">
-          <FormField label="Age" htmlFor="age">
+          <FormField label="Date of birth" htmlFor="date_of_birth">
             <input
-              id="age"
-              type="number"
+              id="date_of_birth"
+              type="date"
               required
-              min={13}
-              max={120}
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
+              max={MAX_DATE_OF_BIRTH}
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
               className={inputClass}
             />
+            {dateOfBirth && (
+              <p className="mt-1 text-xs text-ink-muted">Age: {calculateAge(dateOfBirth)}</p>
+            )}
           </FormField>
           <FormField label="Sex" htmlFor="sex">
-            <select
-              id="sex"
-              value={sex}
-              onChange={(e) => setSex(e.target.value as Sex)}
-              className={selectClass}
-            >
+            <Select id="sex" value={sex} onChange={(e) => setSex(e.target.value as Sex)}>
               <option value="male">Male</option>
               <option value="female">Female</option>
               <option value="other">Other</option>
-            </select>
+            </Select>
           </FormField>
           <FormField label="Height (cm)" htmlFor="height_cm">
             <input
@@ -171,45 +168,42 @@ export default function GoogleCompleteProfilePage() {
 
         <div className="grid grid-cols-3 gap-4">
           <FormField label="Activity level" htmlFor="activity_level">
-            <select
+            <Select
               id="activity_level"
               value={activityLevel}
               onChange={(e) => setActivityLevel(e.target.value as ActivityLevel)}
-              className={selectClass}
             >
               <option value="sedentary">Sedentary</option>
               <option value="light">Light</option>
               <option value="moderate">Moderate</option>
               <option value="active">Active</option>
               <option value="very_active">Very active</option>
-            </select>
+            </Select>
           </FormField>
           <FormField label="Training experience" htmlFor="training_experience">
-            <select
+            <Select
               id="training_experience"
               value={trainingExperience}
               onChange={(e) => setTrainingExperience(e.target.value as ExperienceLevel)}
-              className={selectClass}
             >
               <option value="beginner">Beginner</option>
               <option value="intermediate">Intermediate</option>
               <option value="advanced">Advanced</option>
-            </select>
+            </Select>
           </FormField>
           <FormField label="Diet" htmlFor="dietary_preference">
-            <select
+            <Select
               id="dietary_preference"
               value={dietaryPreference}
               onChange={(e) => setDietaryPreference(e.target.value as DietaryPreference)}
-              className={selectClass}
             >
               <option value="none">None</option>
               <option value="vegetarian">Vegetarian</option>
-              <option value="vegan">Vegan</option>
-              <option value="pescatarian">Pescatarian</option>
+              <option value="non_vegetarian">Non-Vegetarian</option>
+              <option value="eggetarian">Eggetarian</option>
               <option value="keto">Keto</option>
               <option value="other">Other</option>
-            </select>
+            </Select>
           </FormField>
         </div>
 

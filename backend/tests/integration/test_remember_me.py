@@ -15,7 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 SIGNUP_PAYLOAD = {
     "password": "testpass123",
     "full_name": "Remember Me Test",
-    "age": 30,
+    "date_of_birth": "1996-01-01",
     "sex": "male",
     "height_cm": 180,
     "goal_weight_kg": 80,

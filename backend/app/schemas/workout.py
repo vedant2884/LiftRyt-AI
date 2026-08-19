@@ -143,3 +143,27 @@ class WorkoutOverview(BaseModel):
     total_sets: int
     most_trained_muscle: str | None
     most_trained_exercise_name: str | None
+    # Consecutive-days streaks from actual logged workouts (see
+    # app.services.streaks_service.get_workout_streak) — distinct from the
+    # weight-logging streak surfaced separately on the Dashboard.
+    current_streak_days: int
+    longest_streak_days: int
+
+
+class CalendarDayWorkout(BaseModel):
+    id: uuid.UUID
+    name: str
+    performed_at: datetime
+    exercise_count: int
+    set_count: int
+    total_volume_kg: float
+    duration_seconds: int | None
+
+
+class CalendarDayOut(BaseModel):
+    """One entry per date that has at least one logged workout — a day with
+    no entry in the list is simply a day with no workout, rather than the
+    calendar enumerating every day of the month with a workouts=[] filler."""
+
+    date: date
+    workouts: list[CalendarDayWorkout]

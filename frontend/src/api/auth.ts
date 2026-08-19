@@ -16,7 +16,10 @@ export interface ProfileUpdatePayload {
   full_name?: string;
   username?: string;
   avatar_url?: string;
-  age?: number;
+  // No separate age field — age is always derived from date_of_birth on
+  // the backend (see UserProfileUpdate), so there's no way to set them
+  // inconsistently. date_of_birth is "YYYY-MM-DD".
+  date_of_birth?: string;
   sex?: Sex;
   height_cm?: number;
   goal_weight_kg?: number;
@@ -28,6 +31,7 @@ export interface ProfileUpdatePayload {
   theme?: ThemeMode;
   accent_color?: AccentColor;
   default_progression_increment_kg?: number;
+  workout_reminders_enabled?: boolean;
 }
 
 export interface SignupPayload {
@@ -35,7 +39,7 @@ export interface SignupPayload {
   password: string;
   full_name: string;
   username: string;
-  age: number;
+  date_of_birth: string;
   sex: Sex;
   height_cm: number;
   goal_weight_kg: number;
@@ -75,7 +79,7 @@ export async function googleAuth(idToken: string): Promise<GoogleAuthResponse> {
 export interface GoogleCompleteProfilePayload {
   google_token: string;
   username: string;
-  age: number;
+  date_of_birth: string;
   sex: Sex;
   height_cm: number;
   goal_weight_kg: number;

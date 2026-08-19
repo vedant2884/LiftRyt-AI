@@ -1,7 +1,17 @@
-from pydantic import BaseModel, EmailStr, Field
+from datetime import date
+
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.models.enums import ActivityLevel, DietaryPreference, ExperienceLevel, Sex
 from app.schemas.user import USERNAME_PATTERN, UserProfile
+from app.services.age_calculation import MIN_REASONABLE_AGE, calculate_age, validate_date_of_birth
+
+
+def _validate_signup_dob(value: date) -> date:
+    validate_date_of_birth(value)
+    if calculate_age(value) < MIN_REASONABLE_AGE:
+        raise ValueError(f"You must be at least {MIN_REASONABLE_AGE} to sign up.")
+    return value
 
 
 class SignupRequest(BaseModel):
@@ -9,7 +19,7 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=8, max_length=72)
     full_name: str = Field(min_length=1, max_length=255)
     username: str = Field(pattern=USERNAME_PATTERN)
-    age: int = Field(ge=13, le=120)
+    date_of_birth: date
     sex: Sex
     height_cm: float = Field(gt=0, le=300)
     # Required: the coach and dashboard are pitched as grounded in "your
@@ -21,6 +31,8 @@ class SignupRequest(BaseModel):
     activity_level: ActivityLevel = ActivityLevel.MODERATE
     training_experience: ExperienceLevel = ExperienceLevel.BEGINNER
     dietary_preference: DietaryPreference = DietaryPreference.NONE
+
+    _validate_date_of_birth = field_validator("date_of_birth")(_validate_signup_dob)
 
 
 class LoginRequest(BaseModel):
@@ -84,7 +96,7 @@ class ChangePasswordRequest(BaseModel):
 class GoogleCompleteProfileRequest(BaseModel):
     google_token: str
     username: str = Field(pattern=USERNAME_PATTERN)
-    age: int = Field(ge=13, le=120)
+    date_of_birth: date
     sex: Sex
     height_cm: float = Field(gt=0, le=300)
     goal_weight_kg: float = Field(gt=0, le=500)
@@ -92,3 +104,5 @@ class GoogleCompleteProfileRequest(BaseModel):
     activity_level: ActivityLevel = ActivityLevel.MODERATE
     training_experience: ExperienceLevel = ExperienceLevel.BEGINNER
     dietary_preference: DietaryPreference = DietaryPreference.NONE
+
+    _validate_date_of_birth = field_validator("date_of_birth")(_validate_signup_dob)

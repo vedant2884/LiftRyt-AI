@@ -16,6 +16,7 @@ calculation bugs, not migration correctness.
 """
 
 import uuid
+from datetime import date, timedelta
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -100,7 +101,9 @@ async def test_user(db_session: AsyncSession) -> User:
         hashed_password="not-a-real-hash",
         full_name="Test User",
         username=f"test_{uuid.uuid4().hex[:12]}",
-        age=30,
+        # timedelta days (not .replace(year=...)) so this never hits the
+        # Feb-29-on-a-non-leap-target-year ValueError footgun.
+        date_of_birth=date.today() - timedelta(days=30 * 365),
         sex=Sex.MALE,
         height_cm=180,
         activity_level=ActivityLevel.MODERATE,
@@ -122,7 +125,7 @@ async def other_user(db_session: AsyncSession) -> User:
         hashed_password="not-a-real-hash",
         full_name="Other User",
         username=f"test_{uuid.uuid4().hex[:12]}",
-        age=28,
+        date_of_birth=date.today() - timedelta(days=28 * 365),
         sex=Sex.FEMALE,
         height_cm=165,
         activity_level=ActivityLevel.MODERATE,

@@ -12,7 +12,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Dumbbell, Flame, LineChart as LineChartIcon, Trophy } from "lucide-react";
+import { Calendar, Dumbbell, Flame, LineChart as LineChartIcon, Trophy } from "lucide-react";
 import {
   fetchExerciseProgression,
   fetchMuscleVolume,
@@ -21,6 +21,7 @@ import {
   fetchWorkoutOverview,
   listWorkouts,
 } from "../api/workouts";
+import ActivityCalendar from "../components/ActivityCalendar";
 import { EmptyState } from "../components/EmptyState";
 import { Skeleton, StatCardSkeletonRow } from "../components/Skeleton";
 import { getChartTheme } from "../lib/chartTheme";
@@ -190,9 +191,11 @@ export default function WorkoutAnalysisPage() {
       <section>
         <SectionHeading icon={Flame} title="Overview" />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <StatCard label="Total workouts" value={String(overview?.total_workouts ?? 0)} />
+          <StatCard label="Current streak" value={`${overview?.current_streak_days ?? 0} ${overview?.current_streak_days === 1 ? "day" : "days"}`} />
+          <StatCard label="Longest streak" value={`${overview?.longest_streak_days ?? 0} ${overview?.longest_streak_days === 1 ? "day" : "days"}`} />
           <StatCard label="This week" value={String(overview?.workouts_this_week ?? 0)} />
           <StatCard label="This month" value={String(overview?.workouts_this_month ?? 0)} />
+          <StatCard label="Total workouts" value={String(overview?.total_workouts ?? 0)} />
           <StatCard label="Total sets" value={String(overview?.total_sets ?? 0)} />
           <StatCard label="Total volume" value={`${Math.round(overview?.total_volume_kg ?? 0)} kg`} />
           <StatCard
@@ -204,6 +207,12 @@ export default function WorkoutAnalysisPage() {
             value={overview?.most_trained_exercise_name ?? "—"}
           />
         </div>
+      </section>
+
+      {/* Activity calendar */}
+      <section>
+        <SectionHeading icon={Calendar} title="Activity calendar" />
+        <ActivityCalendar />
       </section>
 
       {/* B. Personal Records */}

@@ -1,5 +1,6 @@
 import { api } from "../lib/api";
 import type {
+  CalendarDay,
   ExerciseProgressionStats,
   MuscleVolume,
   PersonalRecord,
@@ -74,5 +75,10 @@ export async function fetchWorkoutOverview(): Promise<WorkoutOverview> {
 
 export async function fetchExerciseProgression(exerciseId: string): Promise<ExerciseProgressionStats> {
   const res = await api.get<ExerciseProgressionStats>(`/workouts/analysis/progression/${exerciseId}`);
+  return res.data;
+}
+
+export async function fetchActivityCalendar(year: number, month: number): Promise<CalendarDay[]> {
+  const res = await api.get<CalendarDay[]>("/workouts/analysis/calendar", { params: { year, month } });
   return res.data;
 }

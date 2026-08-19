@@ -115,4 +115,23 @@ export interface WorkoutOverview {
   total_sets: number;
   most_trained_muscle: string | null;
   most_trained_exercise_name: string | null;
+  current_streak_days: number;
+  longest_streak_days: number;
+}
+
+export interface CalendarDayWorkout {
+  id: string;
+  name: string;
+  performed_at: string;
+  exercise_count: number;
+  set_count: number;
+  total_volume_kg: number;
+  duration_seconds: number | null;
+}
+
+/** Only dates with >=1 logged workout appear — a missing date is simply a
+ * day with no workout, not an explicit empty entry. */
+export interface CalendarDay {
+  date: string;
+  workouts: CalendarDayWorkout[];
 }

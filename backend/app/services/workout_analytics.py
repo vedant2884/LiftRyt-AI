@@ -13,11 +13,15 @@ rather than pulled into Python and aggregated there.
 """
 
 import uuid
+from collections import defaultdict
+from datetime import date
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.workout import (
+    CalendarDayOut,
+    CalendarDayWorkout,
     ExerciseProgressionStats,
     MuscleVolume,
     PersonalRecord,
@@ -26,6 +30,7 @@ from app.schemas.workout import (
     WeeklyVolume,
     WorkoutOverview,
 )
+from app.services import streaks_service
 
 PR_QUERY = text(
     """
@@ -314,6 +319,7 @@ async def get_workout_overview(
     most_exercise = (
         await db.execute(MOST_TRAINED_EXERCISE_QUERY, {"user_id": user_id})
     ).mappings().first()
+    streak = await streaks_service.get_workout_streak(db, user_id)
 
     return WorkoutOverview(
         total_workouts=row["total_workouts"] or 0,
@@ -323,4 +329,55 @@ async def get_workout_overview(
         total_sets=row["total_sets"] or 0,
         most_trained_muscle=most_muscle["muscle"] if most_muscle else None,
         most_trained_exercise_name=most_exercise["name"] if most_exercise else None,
+        current_streak_days=streak.current_streak_days,
+        longest_streak_days=streak.longest_streak_days,
     )
+
+
+ACTIVITY_CALENDAR_QUERY = text(
+    """
+    SELECT
+        w.id,
+        w.name,
+        w.performed_at,
+        w.duration_seconds,
+        COUNT(DISTINCT COALESCE(ws.exercise_id, ws.custom_exercise_id)) AS exercise_count,
+        COUNT(ws.id) FILTER (WHERE ws.is_warmup = false) AS set_count,
+        COALESCE(SUM(ws.reps * ws.weight_kg) FILTER (WHERE ws.is_warmup = false), 0) AS total_volume_kg
+    FROM workouts w
+    LEFT JOIN workout_sets ws ON ws.workout_id = w.id
+    WHERE w.user_id = :user_id
+      AND w.performed_at >= :month_start AND w.performed_at < :month_end
+    GROUP BY w.id
+    ORDER BY w.performed_at
+    """
+)
+
+
+async def get_activity_calendar(
+    db: AsyncSession, user_id: uuid.UUID, month_start, month_end
+) -> list[CalendarDayOut]:
+    """Every logged workout in [month_start, month_end), grouped by the
+    calendar date it was performed on — a day can have more than one
+    workout (e.g. an AM/PM split), so this groups rather than assumes one
+    row per day. Days with zero workouts simply don't appear; the frontend
+    calendar renders those as empty, not as an explicit "no workout" entry."""
+    rows = (
+        await db.execute(ACTIVITY_CALENDAR_QUERY, {"user_id": user_id, "month_start": month_start, "month_end": month_end})
+    ).mappings().all()
+
+    by_date: dict[date, list[CalendarDayWorkout]] = defaultdict(list)
+    for row in rows:
+        day = row["performed_at"].date()
+        by_date[day].append(
+            CalendarDayWorkout(
+                id=row["id"],
+                name=row["name"],
+                performed_at=row["performed_at"],
+                exercise_count=row["exercise_count"],
+                set_count=row["set_count"],
+                total_volume_kg=float(row["total_volume_kg"]),
+                duration_seconds=row["duration_seconds"],
+            )
+        )
+    return [CalendarDayOut(date=day, workouts=workouts) for day, workouts in sorted(by_date.items())]

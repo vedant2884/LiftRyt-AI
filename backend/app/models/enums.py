@@ -33,6 +33,11 @@ class ExperienceLevel(str, Enum):
 class DietaryPreference(str, Enum):
     NONE = "none"
     VEGETARIAN = "vegetarian"
+    NON_VEGETARIAN = "non_vegetarian"
+    EGGETARIAN = "eggetarian"
+    # Kept for backward compatibility with existing rows — no longer offered
+    # in the signup UI (see SignupPage.tsx / GoogleCompleteProfilePage.tsx),
+    # which now shows the simpler Vegetarian/Non-Vegetarian/Eggetarian set.
     VEGAN = "vegan"
     PESCATARIAN = "pescatarian"
     KETO = "keto"
